@@ -1,0 +1,223 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* GLOBAL RESET & OLYMPIC THEME */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  background: #EFEEF3;
+  color: #1A202C;
+}
+
+/* Subtle Texture */
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 100% 0%, rgba(0, 133, 199, 0.03) 0%, transparent 25%),
+    radial-gradient(circle at 0% 100%, rgba(255, 215, 0, 0.03) 0%, transparent 25%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* UTILITIES */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+.fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Mask for horizontal scrolling fading */
+.mask-fade-x {
+  mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black calc(100% - 12px), transparent);
+}
+
+/* FIXED NEOMORPHISM SYSTEM */
+
+/* 1. Flat/Extruded Card (Standard Container) */
+.neu-card {
+  @apply bg-neu-base rounded-3xl p-5 transition-all duration-300;
+  box-shadow: 
+    8px 8px 16px rgba(163, 163, 168, 0.25),
+    -8px -8px 16px rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* 2. Interactive Card (Hover/Active states) */
+.neu-card-interactive {
+  @apply neu-card cursor-pointer active:scale-[0.98];
+}
+.neu-card-interactive:active {
+  box-shadow: 
+    inset 4px 4px 8px rgba(163, 163, 168, 0.2),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.7);
+}
+
+/* 3. Pressed/Inset (Inputs, active toggles) */
+.neu-inset {
+  @apply bg-neu-base rounded-2xl border-none;
+  box-shadow: 
+    inset 3px 3px 6px rgba(163, 163, 168, 0.25),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.7);
+}
+
+/* 4. Action Buttons (Pop out) */
+.neu-button {
+  @apply bg-neu-base text-electric-600 font-bold rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95;
+  box-shadow: 
+    5px 5px 10px rgba(163, 163, 168, 0.3),
+    -5px -5px 10px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.neu-button:active {
+  box-shadow: 
+    inset 2px 2px 4px rgba(163, 163, 168, 0.3),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.7);
+}
+
+.neu-button.primary {
+  @apply bg-electric-600 text-white shadow-lg shadow-electric-600/30 border-none;
+  box-shadow: 6px 6px 12px rgba(0, 133, 199, 0.3), -6px -6px 12px rgba(255, 255, 255, 0.8);
+}
+.neu-button.primary:active {
+  background: #0077B3;
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* 5. Glassmorphism (Overlays/Headers) */
+.glass-panel {
+  background: rgba(239, 238, 243, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-nav-bottom {
+  background: rgba(239, 238, 243, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.02);
+}
+
+/* Inputs & Form Elements */
+.soft-input {
+  @apply w-full bg-neu-base rounded-2xl px-4 py-3.5 text-gray-900 placeholder-gray-500 outline-none transition-all font-medium text-base;
+  box-shadow: 
+    inset 2px 2px 5px rgba(163, 163, 168, 0.35),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  border: 1px solid transparent;
+}
+.soft-input:focus {
+  box-shadow: 
+    inset 3px 3px 6px rgba(163, 163, 168, 0.4),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 133, 199, 0.2);
+}
+
+/* Badges */
+.neu-badge {
+  @apply px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest;
+  box-shadow: 2px 2px 4px #D1D1D9, -2px -2px 4px #FFFFFF;
+}
+
+/* Filter Pill */
+.filter-pill {
+  @apply px-4 py-2.5 rounded-xl text-xs font-bold transition-all;
+  box-shadow: 
+    3px 3px 6px rgba(163, 163, 168, 0.3),
+    -3px -3px 6px rgba(255, 255, 255, 0.85);
+  border: none;
+  background: #EFEEF3;
+}
+.filter-pill:active {
+  box-shadow: 
+    inset 2px 2px 4px rgba(163, 163, 168, 0.25),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.6);
+}
+
+/* MOBILE OPTIMIZATIONS & ANIMATIONS */
+
+/* Ensure all interactive elements have minimum touch targets */
+button, 
+[role="button"], 
+a, 
+input[type="submit"],
+input[type="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Disable double-tap zoom on buttons */
+button {
+  touch-action: manipulation;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent overscroll bounce on iOS */
+body {
+  overscroll-behavior: none;
+}
+
+/* Disable text selection on interactive elements */
+button, [role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent pull-to-refresh */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Improved focus states for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #0085C7;
+  outline-offset: 2px;
+}
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 0px, #e0e0e0 40px, #f0f0f0 80px);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Haptic feedback simulation (visual) */
+.haptic-press {
+  animation: hapticPress 100ms ease-out;
+}
+
+@keyframes hapticPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}

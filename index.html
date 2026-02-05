@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Gold Hunt: Fantasy Olympics '26</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // Olympic / Modern Palette
+              neu: {
+                base: '#EFEEF3', // Slightly darker base for better white highlights
+                pressed: '#E2E2E8', 
+                white: '#FFFFFF',
+                text: {
+                    main: '#2D3748', 
+                    sub: '#718096',  
+                    bold: '#1A202C', 
+                }
+              },
+              electric: {
+                600: '#0085C7', // Olympic Blue
+                500: '#0095D9',
+                400: '#3FA9F5',
+                50: '#E0F2FE', 
+              },
+              italy: {
+                green: '#009F3D', 
+                red: '#DF0024',   
+              },
+              gold: {
+                400: '#FFD700', 
+                500: '#F4C300', 
+                600: '#B8860B', 
+                50: '#FFFBEB',
+              },
+              olympic: {
+                black: '#000000',
+                yellow: '#F4C300',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            boxShadow: {
+              'neu-flat': '6px 6px 12px #D1D1D9, -6px -6px 12px #FFFFFF',
+              'neu-pressed': 'inset 4px 4px 8px #D1D1D9, inset -4px -4px 8px #FFFFFF',
+              'neu-icon': '3px 3px 6px #D1D1D9, -3px -3px 6px #FFFFFF',
+              'neu-btn': '5px 5px 10px #D1D1D9, -5px -5px 10px #FFFFFF',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --header-h: calc(64px + env(safe-area-inset-top));
+        --nav-h: calc(88px + env(safe-area-inset-bottom));
+      }
+
+      body { 
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overscroll-behavior-y: none;
+        margin: 0;
+        -webkit-tap-highlight-color: transparent;
+        background-color: #EFEEF3; /* Matched to neu-base */
+      }
+
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+      .pt-safe { padding-top: env(safe-area-inset-top); }
+      
+      .transition-standard {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Layout enforcement */
+      header { height: var(--header-h); padding-top: env(safe-area-inset-top); }
+      main { padding-top: var(--header-h); padding-bottom: var(--nav-h); }
+      
+      /* Hide scrollbars but keep functionality */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* Animation fallbacks */
+      .fade-in { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      
+      /* Input resets */
+      input, select, textarea { appearance: none; -webkit-appearance: none; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/",
+    "react-icons": "https://esm.sh/react-icons@^5.5.0",
+    "react-icons/": "https://esm.sh/react-icons@^5.5.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-neu-base text-neu-text-main select-none">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
