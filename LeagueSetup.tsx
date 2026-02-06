@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { OlympicRings, Plus, LogIn, ArrowRight, Wallet, Users, Clock, Check, Calendar, X, ChevronRight, ChevronDown, Shuffle, TrendingUp, Whistle } from './Icons';
-import { generateLeagueCode, generateWaveCode } from '../services/databaseService';
-import { Wave as WaveType } from '../types';
-import { DEFAULT_LOCK_TIME } from '../constants';
-import { db } from '../services/firebase';
+import { generateLeagueCode, generateWaveCode } from './databaseService';
+import { Wave as WaveType } from './types';
+import { DEFAULT_LOCK_TIME } from './constants';
+import { db } from './firebase';
 
 interface LeagueSetupProps {
   onComplete: (settings: any) => void;
@@ -743,7 +743,7 @@ const LeagueSetup: React.FC<LeagueSetupProps> = ({ onComplete, onCancel, initial
                                         disabled={isFull && mode === 'join'}
                                         className={`p-5 rounded-2xl transition-all text-left flex flex-col justify-between h-32 relative overflow-hidden ${
                                             isSelected 
-                                            ? 'bg-white shadow-inner ring-2 ring-electric-600 ring-offset-2' 
+                                            ? 'bg-white shadow-inner border-2 border-electric-600' 
                                             : isFull && mode === 'join'
                                                 ? 'bg-gray-100 opacity-60 cursor-not-allowed border border-gray-200'
                                                 : 'bg-white shadow-md hover:shadow-lg hover:-translate-y-1 border border-gray-100'

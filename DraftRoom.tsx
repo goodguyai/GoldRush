@@ -1,11 +1,11 @@
 
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { OlympicEvent, User, Wave } from '../types';
-import { COUNTRIES, ALL_COUNTRIES, EXTENDED_COUNTRIES, getCountryData } from '../constants';
-import { COUNTRY_COLORS } from '../data/olympicCountryColors';
+import { OlympicEvent, User, Wave } from './types';
+import { COUNTRIES, ALL_COUNTRIES, EXTENDED_COUNTRIES, getCountryData } from './constants';
+import { COUNTRY_COLORS } from './olympicCountryColors';
 import { Check, Clock, Search, Shield, RotateCcw, AlertTriangle, X, Shuffle, Trophy, Users, Activity, ChevronDown, Plus, Play, Zap, ArrowRight, Lock, Whistle } from './Icons';
 import CountryBadge from './CountryBadge';
-import { listenToDraftState } from '../services/databaseService';
+import { listenToDraftState } from './databaseService';
 
 interface DraftRoomProps {
   waveId: string;
@@ -572,50 +572,51 @@ const DraftRoom: React.FC<DraftRoomProps> = ({
                                       </div>
 
                                       <div className="flex-1 min-w-0">
-                                          {/* Name and Projection Row - Aligned neatly */}
-                                          <div className="flex items-baseline gap-2 mb-1.5">
-                                              <div className="font-black text-xl text-gray-900 italic tracking-tight leading-none">
-                                                  {country.name}
+                                          <div className="flex justify-between items-center">
+                                              <div>
+                                                  <div className="font-black text-xl text-gray-900 italic tracking-tight leading-none mb-2">
+                                                      {country.name}
+                                                  </div>
+                                                  <div className="flex items-center gap-3">
+                                                      <div className="flex items-center gap-1.5 neu-inset px-2 py-1 rounded-lg text-[10px] font-bold text-gray-700 bg-transparent">
+                                                          <Trophy size={12} className="text-gold-500" />
+                                                          <span>{
+                                                              // @ts-ignore 
+                                                              country.totalMedals || 0} All-Time
+                                                          </span>
+                                                      </div>
+                                                      <div className="text-[10px] font-bold text-gray-400">
+                                                          • {meta.projectedGold} Gold Proj.
+                                                      </div>
+                                                  </div>
                                               </div>
-                                              <div className="text-[10px] font-bold text-gray-400 whitespace-nowrap">
-                                                  • {meta.projectedGold} Gold Proj.
-                                              </div>
-                                          </div>
-                                          
-                                          {/* Stats Badge */}
-                                          <div className="flex items-center gap-1.5 neu-inset px-2 py-1 rounded-lg text-[10px] font-bold text-gray-700 bg-transparent w-fit">
-                                              <Trophy size={12} className="text-gold-500" />
-                                              <span>{
-                                                  // @ts-ignore 
-                                                  country.totalMedals || 0} All-Time
-                                              </span>
+                                              
+                                              {(isMyTurn || isCommissionerMode) && (
+                                                  <button
+                                                      onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          if (isCommissionerMode && !isMyTurn && currentPickerId) {
+                                                              // Commish forcing
+                                                              setCommishForceNation(country.code);
+                                                              setShowCommishTools(true);
+                                                              setForcePickMode(true);
+                                                          } else if (isMyTurn) {
+                                                              handleManualDraft(country.code);
+                                                          }
+                                                      }}
+                                                      className="w-12 h-12 ml-3 flex-shrink-0 rounded-full bg-neu-base flex items-center justify-center text-electric-600 shadow-neu-flat active:shadow-neu-pressed transition-all active:scale-95 border border-white/50"
+                                                  >
+                                                      <Plus size={20} />
+                                                  </button>
+                                              )}
                                           </div>
                                       </div>
                                       
-                                      <div className="flex items-center gap-3">
-                                          {/* Chevron - Always visible to ensure visual cue */}
+                                      {!(isMyTurn || isCommissionerMode) && (
                                           <div className="text-gray-300">
                                               <ChevronDown size={20} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                                           </div>
-
-                                          {(isMyTurn || isCommissionerMode) && (
-                                              <button
-                                                  onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      if (isCommissionerMode && !isMyTurn && currentPickerId) {
-                                                          setCommishForceNation(country.code);
-                                                          setShowCommishTools(true);
-                                                          setForcePickMode(true);
-                                                      } else if (isMyTurn) {
-                                                          handleManualDraft(country.code);
-                                                      }
-                                                  }}
-                                                  className="w-12 h-12 flex-shrink-0 rounded-full bg-neu-base flex items-center justify-center text-electric-600 shadow-neu-flat active:shadow-neu-pressed transition-all active:scale-95 border border-white/50"
-                                              >
-                                                  <Plus size={20} strokeWidth={4} />
-                                              </button>
-                                          )}
-                                      </div>
+                                      )}
                                   </div>
 
                                   {isExpanded && (

@@ -1,3 +1,4 @@
+
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
 import "firebase/compat/firestore";
@@ -13,7 +14,6 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase (Compat)
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -22,7 +22,6 @@ export const app = firebase.app();
 export const auth = firebase.auth();
 export const db = firebase.firestore();
 
-// Optional Analytics
 let analytics = null;
 if (typeof window !== "undefined") {
   try {

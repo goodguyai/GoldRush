@@ -1,6 +1,6 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home, Bug, Copy } from './Icons';
+import { AlertTriangle, RefreshCw, Home, Bug, Copy } from './components/Icons';
 
 interface Props {
   children?: ReactNode;
@@ -150,7 +150,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                   <button
                     onClick={async () => {
                       try {
-                        const { quickFixLeagueDraft } = await import('../services/databaseService');
+                        const { quickFixLeagueDraft } = await import('./services/databaseService');
                         await quickFixLeagueDraft(sessionData.leagueId);
                         alert('Repair attempted! Reloading system...');
                         window.location.reload();

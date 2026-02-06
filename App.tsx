@@ -1,28 +1,27 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { OlympicEvent, MedalResult, User, LeagueSettings, Wave, ChatMessage, DraftedCountry } from './types';
-import { INITIAL_EVENTS } from './data/staticData';
-import { Snowflake, Whistle, Wallet, LogOut, Activity, Edit3, UserCircle, Trophy, Settings, AlertTriangle, Waves, TrendingUp, X, MessageCircle, Grid, ArrowRight, Copy, Check, BookOpen, RotateCcw, Trash2, RefreshCw, Search, Zap } from './components/Icons';
-import LeagueSetup from './components/LeagueSetup';
-import DraftRoom from './components/DraftRoom';
-import MedalTracker from './components/MedalTracker';
-import Leaderboard from './components/Leaderboard';
-import TeamPage from './components/TeamPage';
-import CommissionerDashboard from './components/CommissionerDashboard';
-import LeagueChat from './components/LeagueChat';
-import LeagueRules from './components/LeagueRules';
-import Auth from './components/Auth';
-import Lobby from './components/Lobby';
-import ErrorBoundary from './components/ErrorBoundary';
-import HowItWorks from './components/HowItWorks';
-import Navigation from './components/Navigation';
-import MiniBuySlot from './components/MiniBuySlot';
-import { calculateUserScore } from './services/scoringEngine';
-import { updateWaveInCloud, updateTeamInCloud, joinLeagueInCloud, fetchLeagueData, deleteLeagueInCloud, signOut, listenToLeague, listenToTeams, addResultToLeague, listenToChat, sendChatMessage, createLeagueInCloud, updateLeagueSettingsInCloud, moveUserToWave, initializeDraftState, quickFixLeagueDraft, createBotInWave, clearLeagueResults } from './services/databaseService';
-import { listenToEvents, mergeWithStaticData } from './services/olympicDataService';
-import { auth, db } from './services/firebase';
-import firebase from "firebase/compat/app";
-import ToastProvider, { useToast } from './components/ui/Toast';
+import { INITIAL_EVENTS } from './staticData';
+import { Snowflake, Whistle, Wallet, LogOut, Activity, Edit3, UserCircle, Trophy, Settings, AlertTriangle, Waves, TrendingUp, X, MessageCircle, Grid, ArrowRight, Copy, Check, BookOpen, RotateCcw, Trash2, RefreshCw, Search, Zap } from './Icons';
+import LeagueSetup from './LeagueSetup';
+import DraftRoom from './DraftRoom';
+import MedalTracker from './MedalTracker';
+import Leaderboard from './Leaderboard';
+import TeamPage from './TeamPage';
+import CommissionerDashboard from './CommissionerDashboard';
+import LeagueChat from './LeagueChat';
+import LeagueRules from './LeagueRules';
+import Auth from './Auth';
+import Lobby from './Lobby';
+import ErrorBoundary from './ErrorBoundary';
+import HowItWorks from './HowItWorks';
+import Navigation from './Navigation';
+import MiniBuySlot from './MiniBuySlot';
+import { calculateUserScore } from './scoringEngine';
+import { updateWaveInCloud, updateTeamInCloud, joinLeagueInCloud, fetchLeagueData, deleteLeagueInCloud, signOut, listenToLeague, listenToTeams, addResultToLeague, listenToChat, sendChatMessage, createLeagueInCloud, updateLeagueSettingsInCloud, moveUserToWave, initializeDraftState, quickFixLeagueDraft, createBotInWave, clearLeagueResults } from './databaseService';
+import { listenToEvents, mergeWithStaticData } from './olympicDataService';
+import { auth, db } from './firebase';
+import ToastProvider, { useToast } from './Toast';
 
 const STORAGE_PREFIX = 'goldhunt:';
 
@@ -834,12 +833,6 @@ const AppShell: React.FC = () => {
   if (isSetupMode) {
       return (
           <div className="fixed inset-0 bg-neu-base z-50 overflow-hidden flex flex-col h-dvh">
-              <button 
-                onClick={() => setIsSetupMode(null)} 
-                className="absolute top-6 left-6 z-[60] text-xs font-black uppercase text-neu-text-sub hover:text-neu-text-main flex items-center gap-2 cursor-pointer"
-              >
-                  <ArrowRight className="rotate-180" size={14} /> Cancel
-              </button>
               <LeagueSetup 
                 onComplete={handleSetupComplete} 
                 userId={authUser.uid} 
@@ -988,24 +981,24 @@ const AppShell: React.FC = () => {
                                 
                                 {/* Search & Filters - Compacted */}
                                 <div className="px-4 space-y-2 relative z-20">
-                                    {/* Search Bar - styled to be subtle */}
-                                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/60 shadow-neu-pressed border border-white/40">
-                                      <Search size={14} className="text-gray-400 flex-shrink-0" />
+                                    {/* Search Bar - matching Scout Nations style */}
+                                    <div className="relative">
+                                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                       <input
                                         type="text"
                                         value={eventSearchQuery}
                                         onChange={(e) => setEventSearchQuery(e.target.value)}
                                         placeholder="Search events, sports..."
-                                        className="flex-1 bg-transparent text-sm font-bold text-gray-700 placeholder-gray-400 outline-none"
+                                        className="w-full bg-neu-base rounded-xl px-4 py-3 pl-12 text-sm font-bold text-gray-700 placeholder-gray-400 shadow-[inset_2px_2px_5px_#d1d9e6,inset_-2px_-2px_5px_#ffffff] outline-none focus:ring-2 focus:ring-electric-500/50"
                                       />
                                       {eventSearchQuery && (
                                         <button 
                                             onClick={() => setEventSearchQuery('')}
-                                            className="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-300 transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-300 transition-colors"
                                         >
-                                            <X size={10} />
+                                            <X size={12} />
                                         </button>
-                                        )}
+                                      )}
                                     </div>
                                     
                                     {/* Filter Pills - Horizontal Scroll */}

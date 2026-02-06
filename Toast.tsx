@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, createContext, useContext } from 'react';
-import { Check, X, AlertTriangle, Info } from '../Icons';
+import { Check, X, AlertTriangle, Info } from './Icons';
 
 interface ToastMessage {
   id: string;
@@ -20,7 +20,7 @@ const ToastContext = createContext<ToastContextType | null>(null);
 export const useToast = (): ToastContextType => {
   const context = useContext(ToastContext);
   if (!context) {
-    // Return dummy implementation if no provider to prevent crashes
+    // Return dummy implementation if no provider
     return {
       success: (msg) => console.log('[Toast Success]', msg),
       error: (msg) => console.error('[Toast Error]', msg),
@@ -38,10 +38,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, type, message }]);
     
-    // Auto remove after 3 seconds (faster cleanup)
+    // Auto remove after 4 seconds
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+    }, 4000);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -55,39 +55,34 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     info: (msg) => addToast('info', msg),
   };
 
-  // Only show last 3 toasts to prevent screen clutter
-  const visibleToasts = toasts.slice(-3);
-
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
       
-      {/* Toast Container - Ultra Compact & Modern */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[300] flex flex-col items-center gap-1.5 pointer-events-none w-full max-w-[280px]">
-        {visibleToasts.map(toast => (
+      {/* Toast Container - Compact Snackbar */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[300] flex flex-col items-center gap-2 pointer-events-none max-w-[90vw]">
+        {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`pointer-events-auto pl-3 pr-2 py-1.5 rounded-full shadow-lg flex items-center gap-2 animate-fade-in backdrop-blur-md border border-white/10 select-none transition-all ${
-              toast.type === 'success' ? 'bg-green-600/95 text-white' :
-              toast.type === 'error' ? 'bg-red-600/95 text-white' :
-              toast.type === 'warning' ? 'bg-yellow-500/95 text-white' :
-              'bg-gray-800/95 text-white'
+            className={`pointer-events-auto px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-fade-in whitespace-nowrap ${
+              toast.type === 'success' ? 'bg-green-600 text-white' :
+              toast.type === 'error' ? 'bg-red-600 text-white' :
+              toast.type === 'warning' ? 'bg-yellow-500 text-white' :
+              'bg-gray-800 text-white'
             }`}
           >
-            {toast.type === 'success' && <Check size={10} strokeWidth={3} />}
-            {toast.type === 'error' && <X size={10} strokeWidth={3} />}
-            {toast.type === 'warning' && <AlertTriangle size={10} strokeWidth={3} />}
-            {toast.type === 'info' && <Info size={10} strokeWidth={3} />}
+            {toast.type === 'success' && <Check size={14} />}
+            {toast.type === 'error' && <X size={14} />}
+            {toast.type === 'warning' && <AlertTriangle size={14} />}
+            {toast.type === 'info' && <Info size={14} />}
             
-            <span className="font-bold text-[10px] tracking-wide leading-none truncate max-w-[200px]">
-                {toast.message}
-            </span>
+            <span className="font-semibold text-xs">{toast.message}</span>
             
             <button
               onClick={() => removeToast(toast.id)}
-              className="ml-1 w-4 h-4 flex items-center justify-center hover:bg-white/20 rounded-full transition-colors"
+              className="ml-1 p-0.5 hover:bg-white/20 rounded-full transition-colors"
             >
-              <X size={10} />
+              <X size={12} />
             </button>
           </div>
         ))}
