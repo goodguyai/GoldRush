@@ -111,12 +111,12 @@ const Lobby: React.FC<LobbyProps> = ({ userId, userEmail, onSelectLeague, onCrea
                                onClick={() => handleSelect(l)}
                                className="w-full bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex items-center justify-between group hover:border-electric-200 transition-colors cursor-pointer"
                            >
-                               <div className="flex items-center gap-4">
-                                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${l.role === 'commissioner' ? 'bg-gold-50 text-gold-600' : 'bg-gray-50 text-gray-500'}`}>
+                               <div className="flex items-center gap-4 min-w-0 flex-1">
+                                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner flex-shrink-0 ${l.role === 'commissioner' ? 'bg-gold-50 text-gold-600' : 'bg-gray-50 text-gray-500'}`}>
                                        {l.role === 'commissioner' ? <Whistle size={20} /> : <Grid size={20} />}
                                    </div>
-                                   <div className="text-left">
-                                       <div className="text-base font-black text-gray-900 italic uppercase">{l.leagueName}</div>
+                                   <div className="text-left min-w-0">
+                                       <div className="text-base font-black text-gray-900 italic uppercase truncate">{l.leagueName}</div>
                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
                                            {l.role === 'commissioner' ? 'Commissioner' : 'Player'} • Division {l.waveId || 'A'}
                                        </div>

@@ -52,6 +52,15 @@
               'neu-pressed': 'inset 4px 4px 8px #D1D1D9, inset -4px -4px 8px #FFFFFF',
               'neu-icon': '3px 3px 6px #D1D1D9, -3px -3px 6px #FFFFFF',
               'neu-btn': '5px 5px 10px #D1D1D9, -5px -5px 10px #FFFFFF',
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                from: { opacity: '0', transform: 'translateY(8px)' },
+                to: { opacity: '1', transform: 'translateY(0)' },
+              },
             }
           }
         }
