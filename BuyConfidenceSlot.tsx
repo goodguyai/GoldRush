@@ -50,7 +50,7 @@ const BuyConfidenceSlot: React.FC<BuyConfidenceSlotProps> = ({
   };
 
   return (
-    <div className="neu-card p-4 flex flex-col gap-4 border border-electric-100">
+    <div className="neu-card p-4 flex flex-col gap-4">
       <div className="flex items-center gap-3 w-full">
         <div className="w-10 h-10 rounded-xl bg-electric-50 flex items-center justify-center text-electric-600 shadow-sm flex-shrink-0">
           <Zap size={20} />

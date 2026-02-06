@@ -22,6 +22,7 @@ import { updateWaveInCloud, updateTeamInCloud, joinLeagueInCloud, fetchLeagueDat
 import { listenToEvents, mergeWithStaticData } from './olympicDataService';
 import { auth, db } from './firebase';
 import ToastProvider, { useToast } from './Toast';
+import WalletModal from './WalletModal';
 
 const STORAGE_PREFIX = 'goldhunt:';
 
@@ -97,6 +98,9 @@ const AppShell: React.FC = () => {
   // Edit Name State
   const [showEditNameModal, setShowEditNameModal] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
+
+  // Wallet State
+  const [showWallet, setShowWallet] = useState(false);
 
   // Data
   const [events, setEvents] = useState<OlympicEvent[]>(INITIAL_EVENTS);
@@ -939,12 +943,12 @@ const AppShell: React.FC = () => {
                     <Whistle size={18} />
                     </button>
                 )}
-                <div className="neu-button px-3 py-2 rounded-xl flex items-center gap-1.5">
+                <button onClick={() => setShowWallet(true)} className="neu-button px-3 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
                   <div className="w-4 h-4 bg-green-500 rounded flex items-center justify-center">
                     <Wallet size={10} className="text-white" />
                   </div>
                   <span className="text-sm font-black text-gray-900">${(leagueSettings.entryFee + (currentUser.purchasedBoosts * leagueSettings.extraSlotPrice)).toFixed(0)}</span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -1170,11 +1174,11 @@ const AppShell: React.FC = () => {
 
                 {currentTab === 'profile' && (
                   <SectionErrorBoundary name="Profile">
-                      <TeamPage 
-                        user={currentUserEnriched} 
-                        events={events} 
-                        results={liveResults} 
-                        entryFee={leagueSettings.entryFee} 
+                      <TeamPage
+                        user={currentUserEnriched}
+                        events={events}
+                        results={liveResults}
+                        entryFee={leagueSettings.entryFee}
                         extraSlotPrice={leagueSettings.extraSlotPrice}
                         onEditName={() => setShowEditNameModal(true)}
                         leagueSettings={leagueSettings}
@@ -1187,6 +1191,7 @@ const AppShell: React.FC = () => {
                         scrollToSettingsTrigger={settingsScrollTrigger}
                         onBuyBoost={() => handleUpdateTeam({ purchasedBoosts: (currentUser.purchasedBoosts || 0) + 1 })}
                         onRemoveBoost={handleRemoveBoostSlot}
+                        onOpenWallet={() => setShowWallet(true)}
                       />
                   </SectionErrorBoundary>
                 )}
@@ -1207,6 +1212,16 @@ const AppShell: React.FC = () => {
              </div>
           )}
         </main>
+
+        {/* Wallet Modal */}
+        {showWallet && leagueSettings && (
+          <WalletModal
+            user={currentUser}
+            leagueSettings={leagueSettings}
+            allUsers={allUsers}
+            onClose={() => setShowWallet(false)}
+          />
+        )}
 
         {/* Edit Name Modal */}
         {showEditNameModal && (

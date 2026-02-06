@@ -111,6 +111,12 @@ export interface LeagueSettings {
   simulation?: SimulationState;
   myTeamName?: string;
   timeZone?: string;
+  payouts?: {
+    first: number;
+    second: number;
+    third: number;
+    fantasyCares: number;
+  };
 }
 
 export interface ScoreDetail {

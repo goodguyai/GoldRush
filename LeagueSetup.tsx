@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { OlympicRings, Plus, LogIn, ArrowRight, Wallet, Users, Clock, Check, Calendar, X, ChevronRight, ChevronDown, Shuffle, TrendingUp, Whistle } from './Icons';
+import { OlympicRings, Plus, LogIn, ArrowRight, Wallet, Users, Clock, Check, Calendar, X, ChevronRight, ChevronDown, Shuffle, TrendingUp, Whistle, Trophy } from './Icons';
 import { generateLeagueCode, generateWaveCode } from './databaseService';
 import { Wave as WaveType } from './types';
 import { DEFAULT_LOCK_TIME } from './constants';
@@ -164,7 +164,15 @@ const LeagueSetup: React.FC<LeagueSetupProps> = ({ onComplete, onCancel, initial
   const [usersPerWave, setUsersPerWave] = useState(4);
   const [waves, setWaves] = useState<WaveType[]>([]);
   const [cpDeadlineMode, setCpDeadlineMode] = useState<'global' | 'per-event'>('global');
-  
+
+  // Payout Config
+  const [payoutFirst, setPayoutFirst] = useState(60);
+  const [payoutSecond, setPayoutSecond] = useState(25);
+  const [payoutThird, setPayoutThird] = useState(10);
+  const [fantasyCares, setFantasyCares] = useState(5);
+  const payoutTotal = payoutFirst + payoutSecond + payoutThird + fantasyCares;
+  const estimatedPot = totalTeams * entryFee;
+
   // Draft Settings State
   const [pickTimerDuration, setPickTimerDuration] = useState(60);
   const [autoDraftBehavior, setAutoDraftBehavior] = useState<'random' | 'best' | 'commish'>('random');
@@ -342,11 +350,12 @@ const LeagueSetup: React.FC<LeagueSetupProps> = ({ onComplete, onCancel, initial
         extraSlotPrice,
         role: 'commissioner',
         waves: configuredWaves,
-        selectedWaveId: selectedWaveId || waves[0].id, 
+        selectedWaveId: selectedWaveId || waves[0].id,
         openingCeremonyLockTime: DEFAULT_LOCK_TIME,
         cpDeadlineMode,
         currentPhase: 'phase1_nation_draft',
-        isTestMode: false
+        isTestMode: false,
+        payouts: entryFee > 0 ? { first: payoutFirst, second: payoutSecond, third: payoutThird, fantasyCares } : undefined,
       });
     } else if (mode === 'join') {
       onComplete({ mode: 'join', leagueCode: leagueCodeInput, myTeamName: teamName, timeZone, selectedWaveId });
@@ -568,8 +577,8 @@ const LeagueSetup: React.FC<LeagueSetupProps> = ({ onComplete, onCancel, initial
                             <button
                               onClick={() => setCpDeadlineMode('per-event')}
                               className={`p-4 rounded-xl text-center transition-all ${
-                                cpDeadlineMode === 'per-event' 
-                                  ? 'bg-electric-600 text-white shadow-lg' 
+                                cpDeadlineMode === 'per-event'
+                                  ? 'bg-electric-600 text-white shadow-lg'
                                   : 'bg-white border border-gray-200 text-gray-600'
                               }`}
                             >
@@ -578,6 +587,55 @@ const LeagueSetup: React.FC<LeagueSetupProps> = ({ onComplete, onCancel, initial
                             </button>
                           </div>
                         </div>
+
+                        {/* Payout Structure */}
+                        {entryFee > 0 && (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <label className="flex items-center gap-2 text-[11px] font-black text-gray-500 uppercase tracking-widest pl-1">
+                                <Trophy size={14} /> Payout Structure
+                              </label>
+                              <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                                <span className="text-[10px] font-black text-emerald-600">Pot: ${estimatedPot}</span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              {[
+                                { label: '1st Place', value: payoutFirst, setter: setPayoutFirst, color: 'text-gold-600' },
+                                { label: '2nd Place', value: payoutSecond, setter: setPayoutSecond, color: 'text-gray-500' },
+                                { label: '3rd Place', value: payoutThird, setter: setPayoutThird, color: 'text-orange-500' },
+                              ].map(({ label, value, setter, color }) => (
+                                <div key={label} className="flex items-center gap-3">
+                                  <span className={`text-xs font-bold ${color} w-16`}>{label}</span>
+                                  <div className="flex-1 relative h-3 bg-gray-100 rounded-full shadow-inner border border-gray-200">
+                                    <div className="absolute top-0 left-0 h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${value}%` }} />
+                                    <input type="range" min="0" max="80" value={value} onChange={e => setter(parseInt(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                  </div>
+                                  <span className="text-sm font-black text-gray-900 w-14 text-right">{value}%</span>
+                                </div>
+                              ))}
+
+                              {/* Fantasy Cares */}
+                              <div className="flex items-center gap-3 pt-2 border-t border-gray-200/50">
+                                <span className="text-xs font-bold text-pink-500 w-16 flex items-center gap-1">❤️ Cares</span>
+                                <div className="flex-1 relative h-3 bg-gray-100 rounded-full shadow-inner border border-gray-200">
+                                  <div className="absolute top-0 left-0 h-full bg-pink-400 rounded-full transition-all" style={{ width: `${fantasyCares * 2}%` }} />
+                                  <input type="range" min="0" max="20" value={fantasyCares} onChange={e => setFantasyCares(parseInt(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                </div>
+                                <span className="text-sm font-black text-gray-900 w-14 text-right">{fantasyCares}%</span>
+                              </div>
+                            </div>
+
+                            {/* Total indicator */}
+                            <div className={`flex items-center justify-between px-3 py-2 rounded-xl ${payoutTotal === 100 ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-gray-500">Total Split</span>
+                              <span className={`text-sm font-black ${payoutTotal === 100 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {payoutTotal}% {payoutTotal === 100 ? '✓' : `(${payoutTotal > 100 ? '+' : ''}${payoutTotal - 100}%)`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                     </div>
                 )}
 

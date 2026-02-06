@@ -64,7 +64,7 @@ const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({
       </button>
       
       {expanded && (
-        <div className="space-y-4 pt-4 border-t border-gray-100 animate-fade-in">
+        <div className="space-y-4 pt-4 animate-fade-in">
           
           {/* Summary Stats */}
           <div className="grid grid-cols-4 gap-2">
@@ -95,7 +95,7 @@ const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({
               {medalDetails.map((detail, idx) => (
                 <div 
                   key={idx}
-                  className="bg-white rounded-xl p-3 border border-gray-100 flex items-center gap-3"
+                  className="bg-white/60 rounded-2xl p-3 flex items-center gap-3"
                 >
                   <div className="text-lg">
                     {detail.medal === 'Gold' ? '🥇' : detail.medal === 'Silver' ? '🥈' : '🥉'}
@@ -141,7 +141,7 @@ const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({
               {penalties.map((detail, idx) => (
                 <div 
                   key={idx}
-                  className="bg-red-50 rounded-xl p-3 border border-red-100 flex items-center gap-3"
+                  className="bg-red-50/80 rounded-2xl p-3 flex items-center gap-3"
                 >
                   <div className="text-lg">⚠️</div>
                   <div className="flex-1">

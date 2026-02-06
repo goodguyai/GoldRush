@@ -28,11 +28,12 @@ interface TeamPageProps {
   scrollToSettingsTrigger?: number;
   onBuyBoost?: () => void;
   onRemoveBoost?: (removedIds: string[]) => void;
+  onOpenWallet?: () => void;
 }
 
-const TeamPage: React.FC<TeamPageProps> = ({ 
+const TeamPage: React.FC<TeamPageProps> = ({
   user, events, results, entryFee, extraSlotPrice, onEditName,
-  leagueSettings, onSignOut, isCommissioner, onDeleteLeague, onSwitchLeague, onShowRules, onFixDraft, scrollToSettingsTrigger, onBuyBoost, onRemoveBoost
+  leagueSettings, onSignOut, isCommissioner, onDeleteLeague, onSwitchLeague, onShowRules, onFixDraft, scrollToSettingsTrigger, onBuyBoost, onRemoveBoost, onOpenWallet
 }) => {
   const toast = useToast();
   const [copiedCode, setCopiedCode] = React.useState<string | null>(null);
@@ -166,7 +167,7 @@ const TeamPage: React.FC<TeamPageProps> = ({
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-white/60 rounded-2xl p-3 flex items-center gap-3 border border-white/50 shadow-sm">
+                  <button onClick={onOpenWallet} className="bg-white/60 rounded-2xl p-3 flex items-center gap-3 border border-white/50 shadow-sm cursor-pointer active:scale-[0.97] transition-transform text-left">
                       <div className="w-10 h-10 rounded-xl bg-italy-green/10 text-italy-green flex items-center justify-center flex-shrink-0">
                           <DollarSign size={18} />
                       </div>
@@ -174,7 +175,7 @@ const TeamPage: React.FC<TeamPageProps> = ({
                           <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5 leading-none">Dues</div>
                           <div className="text-sm font-black text-gray-900 italic tracking-tight">${totalDues.toFixed(0)}</div>
                       </div>
-                  </div>
+                  </button>
                   <div className="bg-white/60 rounded-2xl p-3 flex items-center gap-3 border border-white/50 shadow-sm">
                       <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-500 flex items-center justify-center flex-shrink-0">
                           <Zap size={18} />
@@ -306,7 +307,7 @@ const TeamPage: React.FC<TeamPageProps> = ({
                       
                       {/* Expanded Content */}
                       {isExpanded && stats && (
-                        <div className="px-4 pb-4 pt-0 border-t border-gray-200/50">
+                        <div className="px-4 pb-4 pt-0">
                             {/* Score Summary */}
                             <div className="mt-4 p-3 rounded-xl bg-white/50 mb-4 flex items-center justify-between">
                                 <div>
@@ -385,9 +386,9 @@ const TeamPage: React.FC<TeamPageProps> = ({
         <div className="space-y-4 max-w-lg mx-auto">
             {/* Invite Code (Commish Only) */}
             {isCommissioner && leagueSettings && (
-                <div className="neu-card p-4 rounded-[24px] flex items-center justify-between bg-white border border-gold-100">
+                <div className="neu-card p-4 rounded-[24px] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gold-50 rounded-xl flex items-center justify-center text-gold-600 shadow-sm">
+                        <div className="w-10 h-10 bg-gold-50 rounded-xl flex items-center justify-center text-gold-600">
                             <Whistle size={20} />
                         </div>
                         <div>
@@ -395,9 +396,9 @@ const TeamPage: React.FC<TeamPageProps> = ({
                             <div className="text-lg font-black text-gray-900 italic tracking-[0.1em]">{leagueSettings.leagueCode}</div>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={() => handleCopyCode(leagueSettings.leagueCode)}
-                        className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-electric-600 active:scale-95 transition-all shadow-sm border border-gray-100"
+                        className="w-10 h-10 neu-button rounded-xl flex items-center justify-center text-gray-400 hover:text-electric-600 active:scale-95 transition-all"
                     >
                         {copiedCode === leagueSettings.leagueCode ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
                     </button>
@@ -405,32 +406,32 @@ const TeamPage: React.FC<TeamPageProps> = ({
             )}
 
             <div className="neu-card p-5 rounded-[28px] space-y-3">
-                <button onClick={onShowRules} className="w-full h-12 bg-gray-50 rounded-2xl flex items-center justify-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:bg-gray-100 border border-gray-100">
+                <button onClick={onShowRules} className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:text-electric-600">
                     <BookOpen size={18} className="text-electric-500" /> Mission Briefing
                 </button>
 
-                <button onClick={onSwitchLeague} className="w-full h-12 bg-gray-50 rounded-2xl flex items-center justify-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:bg-gray-100 border border-gray-100">
+                <button onClick={onSwitchLeague} className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:text-electric-600">
                     <Grid size={18} className="text-purple-500" /> Switch League
                 </button>
 
-                <button onClick={onSignOut} className="w-full h-12 bg-gray-50 rounded-2xl flex items-center justify-center gap-3 text-gray-500 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:bg-red-50 hover:text-red-500 border border-gray-100">
+                <button onClick={onSignOut} className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-3 text-gray-500 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:text-red-500">
                     <LogOut size={18} /> Sign Out
                 </button>
             </div>
 
             {/* Danger Zone */}
             {isCommissioner && (
-                <div className="neu-card p-5 rounded-[28px] space-y-3 border-2 border-red-50 bg-red-50/10">
+                <div className="neu-card p-5 rounded-[28px] space-y-3">
                     <div className="flex items-center gap-2 text-red-500 mb-1 px-1">
                         <AlertTriangle size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Danger Zone</span>
                     </div>
-                    
-                    <button onClick={onFixDraft} className="w-full h-12 bg-white rounded-xl flex items-center justify-center gap-2 text-orange-600 font-bold text-[10px] uppercase tracking-wider active:scale-[0.98] transition-all shadow-sm border border-orange-100">
+
+                    <button onClick={onFixDraft} className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-2 text-orange-600 font-bold text-[10px] uppercase tracking-wider active:scale-[0.98] transition-all">
                         <RotateCcw size={14} /> Fix Draft State
                     </button>
 
-                    <button onClick={onDeleteLeague} className="w-full h-12 bg-white rounded-xl flex items-center justify-center gap-2 text-red-600 font-bold text-[10px] uppercase tracking-wider active:scale-[0.98] transition-all shadow-sm border border-red-100 hover:bg-red-600 hover:text-white">
+                    <button onClick={onDeleteLeague} className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-2 text-red-600 font-bold text-[10px] uppercase tracking-wider active:scale-[0.98] transition-all hover:bg-red-600 hover:text-white">
                         <Trash2 size={14} /> Delete League
                     </button>
                 </div>
