@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { signIn, signUp } from './databaseService';
+import { signIn, signUp, resetPassword } from './databaseService';
 import { OlympicRings, ArrowRight, BookOpen } from './Icons';
 import HowItWorks from './HowItWorks';
 
@@ -11,6 +11,35 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+    setResetLoading(true);
+    setResetError('');
+    try {
+      await resetPassword(resetEmail.trim());
+      setResetSent(true);
+    } catch (err: any) {
+      const code = err.code || '';
+      if (code.includes('user-not-found')) {
+        setResetError('No account found with that email.');
+      } else if (code.includes('invalid-email')) {
+        setResetError('Invalid email address.');
+      } else if (code.includes('too-many-requests')) {
+        setResetError('Too many attempts. Try again later.');
+      } else {
+        setResetError('Failed to send reset email. Try again.');
+      }
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,14 +142,25 @@ const Auth = () => {
             
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Password</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-gradient-to-br from-gray-100 to-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 shadow-inner focus:border-electric-600 focus:ring-2 focus:ring-electric-200 transition-all font-medium outline-none"
                 placeholder="••••••••"
-                required 
+                required
               />
+              {isLogin && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotPassword(true); setResetEmail(email); setResetSent(false); setResetError(''); }}
+                    className="text-[10px] font-bold text-electric-600 hover:text-electric-700 transition-colors uppercase tracking-wider"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
             </div>
 
             {error && (
@@ -153,6 +193,77 @@ const Auth = () => {
       </div>
 
       {showHowItWorks && <HowItWorks onClose={() => setShowHowItWorks(false)} />}
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm">
+            {resetSent ? (
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-black uppercase italic text-gray-900 mb-2">Check Your Email</h3>
+                <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                  We sent a password reset link to <span className="font-bold text-gray-700">{resetEmail}</span>. Check your inbox and spam folder.
+                </p>
+                <button
+                  onClick={() => setShowForgotPassword(false)}
+                  className="w-full py-3 bg-electric-600 text-white rounded-xl font-bold text-sm uppercase tracking-wider"
+                >
+                  Back to Login
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-lg font-black uppercase italic text-gray-900 mb-2">Reset Password</h3>
+                <p className="text-xs text-gray-500 mb-6">Enter your email and we'll send you a reset link.</p>
+
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Email</label>
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={e => setResetEmail(e.target.value)}
+                      className="w-full px-4 py-3 bg-gradient-to-br from-gray-100 to-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 shadow-inner focus:border-electric-600 focus:ring-2 focus:ring-electric-200 transition-all font-medium outline-none"
+                      placeholder="agent@goldhunt.app"
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  {resetError && (
+                    <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex items-center gap-2 animate-fade-in">
+                      <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                      <p className="text-red-600 text-xs font-bold">{resetError}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(false)}
+                      className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={resetLoading || !resetEmail.trim()}
+                      className="flex-1 py-3 bg-electric-600 text-white rounded-xl font-bold text-sm disabled:opacity-50 uppercase tracking-wider"
+                    >
+                      {resetLoading ? 'Sending...' : 'Send Link'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

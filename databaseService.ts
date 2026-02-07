@@ -45,6 +45,10 @@ export const signOut = async () => {
   localStorage.clear();
 };
 
+export const resetPassword = async (email: string) => {
+  await auth.sendPasswordResetEmail(email);
+};
+
 const addToUserLeagues = async (userId: string, leagueSummary: any) => {
     await db.collection("users").doc(userId).set({
         leagues: firebase.firestore.FieldValue.arrayUnion(leagueSummary)

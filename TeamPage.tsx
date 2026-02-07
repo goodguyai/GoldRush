@@ -2,13 +2,15 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { User, OlympicEvent, MedalResult, LeagueSettings } from './types';
 import { calculateUserScore } from './scoringEngine';
-import { Zap, Flag, DollarSign, OlympicRings, Edit3, ChevronDown, Shield, Copy, BookOpen, Grid, LogOut, AlertTriangle, RotateCcw, Trash2, Check, Settings, Whistle } from './Icons';
+import { Zap, Flag, DollarSign, OlympicRings, Edit3, ChevronDown, Shield, Copy, BookOpen, Grid, LogOut, AlertTriangle, RotateCcw, Trash2, Check, Settings, Whistle, Lock } from './Icons';
 import { COUNTRY_COLORS } from './olympicCountryColors';
 import CountryBadge from './CountryBadge';
 import { useToast } from './Toast';
 import { getCountryData } from './constants';
 import BuyConfidenceSlot from './BuyConfidenceSlot';
 import ScoreBreakdown from './ScoreBreakdown';
+import { resetPassword } from './databaseService';
+import { auth } from './firebase';
 
 interface TeamPageProps {
   user: User;
@@ -408,6 +410,25 @@ const TeamPage: React.FC<TeamPageProps> = ({
             <div className="neu-card p-5 rounded-[28px] space-y-3">
                 <button onClick={onShowRules} className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:text-electric-600">
                     <BookOpen size={18} className="text-electric-500" /> Mission Briefing
+                </button>
+
+                <button
+                    onClick={async () => {
+                        const userEmail = auth.currentUser?.email;
+                        if (!userEmail) {
+                            toast.error('No email found for your account.');
+                            return;
+                        }
+                        try {
+                            await resetPassword(userEmail);
+                            toast.success('Password reset email sent!');
+                        } catch (err: any) {
+                            toast.error('Failed to send reset email.');
+                        }
+                    }}
+                    className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:text-electric-600"
+                >
+                    <Lock size={18} className="text-orange-500" /> Reset Password
                 </button>
 
                 <button onClick={onSwitchLeague} className="w-full h-12 neu-inset rounded-2xl flex items-center justify-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wide active:scale-[0.98] transition-all hover:text-electric-600">
