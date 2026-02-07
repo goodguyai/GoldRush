@@ -3,6 +3,10 @@
  * Olympic Data Service
  * Syncs event data from RapidAPI Olympics endpoint
  * Stores in Firebase for persistence and real-time updates
+ *
+ * IMPORTANT: We only track MEDAL events (finals). Preliminary rounds
+ * (heats, qualifiers, semis, etc.) are filtered out so they don't
+ * pollute event status and lock state.
  */
 
 import { db } from './firebase';
@@ -18,10 +22,37 @@ interface RapidAPIEvent {
   start_time: string; // ISO date string
   venue: string;
   status: string;
+  phase?: string;     // e.g. "qualification", "semifinal", "final"
+  round?: string;     // e.g. "Heat 1", "Run 1", "Qualification"
 }
 
 /**
- * Fetch events from RapidAPI Olympics endpoint
+ * Detect if an API event is a preliminary/non-medal round.
+ * These should NOT update our medal event status.
+ */
+const isPreliminaryEvent = (e: RapidAPIEvent): boolean => {
+  const name = (e.event_name || '').toLowerCase();
+  const phase = (e.phase || '').toLowerCase();
+  const round = (e.round || '').toLowerCase();
+  const status = (e.status || '').toLowerCase();
+  const combined = `${name} ${phase} ${round} ${status}`;
+
+  const prelimPatterns = [
+    'qualif', 'prelim', 'heat', 'quarter', 'semi',
+    'round of', 'repechage', 'seeding', 'ranking',
+    'training', 'practice', 'inspection',
+    'run 1', 'run 2', 'leg 1', 'leg 2',
+    'short program', 'rhythm dance',  // figure skating prelim phases
+    'group a', 'group b', 'group c',  // round-robin groups
+    'round robin',
+  ];
+
+  return prelimPatterns.some(p => combined.includes(p));
+};
+
+/**
+ * Fetch events from RapidAPI Olympics endpoint.
+ * Filters to medal events only — preliminary rounds are excluded.
  */
 export const fetchOlympicEvents = async (): Promise<OlympicEvent[]> => {
   try {
@@ -34,16 +65,26 @@ export const fetchOlympicEvents = async (): Promise<OlympicEvent[]> => {
         }
       }
     );
-    
+
     if (!response.ok) {
       console.warn(`[OlympicData] API Error: ${response.status}`);
       return [];
     }
-    
+
     const data = await response.json();
-    
-    // Transform API response to our event format
-    return (data.events || []).map((e: RapidAPIEvent) => ({
+    const rawEvents: RapidAPIEvent[] = data.events || [];
+
+    // Filter: only keep medal events, reject preliminary rounds
+    const medalEvents = rawEvents.filter(e => {
+      if (isPreliminaryEvent(e)) {
+        return false; // Drop heats, qualifiers, semis, etc.
+      }
+      return true; // Keep finals, medal events, and untagged events
+    });
+
+    console.log(`[OlympicData] ${rawEvents.length} raw → ${medalEvents.length} medal events (filtered ${rawEvents.length - medalEvents.length} preliminary)`);
+
+    return medalEvents.map((e: RapidAPIEvent) => ({
       id: e.id || `${e.sport}-${e.event_name}`.replace(/\s+/g, '-').toUpperCase(),
       sport: e.sport || e.discipline,
       name: e.event_name,
@@ -111,39 +152,63 @@ export const syncEventsToFirebase = async (leagueId: string): Promise<number> =>
 };
 
 /**
- * Merge API data with our static data (preserves our intel/descriptions)
+ * Merge API data with our static data (preserves our intel/descriptions).
+ *
+ * CRITICAL: Only accepts status updates for medal events.
+ * If an API event name contains preliminary indicators (heat, qualifier, etc.),
+ * we take the startTime but NOT the status — this prevents prelim completions
+ * from locking medal events.
  */
 export const mergeWithStaticData = (
-  apiEvents: OlympicEvent[], 
+  apiEvents: OlympicEvent[],
   staticEvents: OlympicEvent[]
 ): OlympicEvent[] => {
   if (!apiEvents || apiEvents.length === 0) return staticEvents;
 
+  // Preliminary round indicators — if the API event name contains these,
+  // its status should NOT propagate to our medal events
+  const prelimIndicators = [
+    'qualif', 'prelim', 'heat', 'quarter', 'semi',
+    'round of', 'repechage', 'seeding', 'ranking',
+    'training', 'practice', 'inspection',
+    'run 1', 'run 2', 'leg 1', 'leg 2',
+    'short program', 'rhythm dance',
+    'group a', 'group b', 'group c', 'round robin',
+  ];
+
+  const isApiEventPrelim = (apiName: string): boolean => {
+    const lower = apiName.toLowerCase();
+    return prelimIndicators.some(p => lower.includes(p));
+  };
+
   return staticEvents.map(staticEvent => {
     // Normalize names for better matching
     const cleanStaticName = staticEvent.name.toLowerCase().replace(/men's|women's|mixed/g, '').trim();
-    
+
     // Find matching API event by sport + approximate name
     const apiMatch = apiEvents.find(api => {
       const cleanApiName = api.name.toLowerCase().replace(/men's|women's|mixed/g, '').trim();
       const sportMatch = api.sport.toLowerCase() === staticEvent.sport.toLowerCase();
       const genderMatch = api.gender === staticEvent.gender;
-      
+
       // Fuzzy name check
       const nameMatch = cleanApiName.includes(cleanStaticName) || cleanStaticName.includes(cleanApiName);
-      
+
       return sportMatch && genderMatch && nameMatch;
     });
-    
+
     if (apiMatch) {
+      // Safety check: if the matched API event looks like a prelim round,
+      // take startTime but keep status as Scheduled
+      const isPrelim = isApiEventPrelim(apiMatch.name);
+
       return {
         ...staticEvent,
-        startTime: apiMatch.startTime, // Add real start time
-        status: apiMatch.status as any, // Update status
-        // Keep static ID, description (intel), favorites
+        startTime: apiMatch.startTime,
+        status: isPrelim ? staticEvent.status : (apiMatch.status as any),
       };
     }
-    
+
     return staticEvent;
   });
 };
