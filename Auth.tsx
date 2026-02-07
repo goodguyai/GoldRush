@@ -53,6 +53,8 @@ const Auth = () => {
       }
     } catch (err: any) {
       console.error("Auth Error:", err);
+      console.error("Auth Error Code:", err?.code);
+      console.error("Auth Error Message:", err?.message);
       let msg = "Authentication failed.";
       
       const errorCode = err.code;
@@ -77,8 +79,15 @@ const Auth = () => {
         msg = "Password should be at least 6 characters.";
       } else if (errorCode === "auth/too-many-requests" || errorMessage.includes("auth/too-many-requests")) {
         msg = "Too many attempts. Please try again later.";
+      } else if (errorCode === "auth/invalid-api-key" || errorMessage.includes("auth/invalid-api-key")) {
+        msg = "Configuration error. Please contact the commissioner.";
+      } else if (errorCode === "auth/network-request-failed" || errorMessage.includes("auth/network-request-failed")) {
+        msg = "Network error. Check your connection and try again.";
+      } else if (errorMessage) {
+        // Show the raw error for debugging unknown auth issues
+        msg = `Auth error: ${errorCode || 'unknown'} - ${errorMessage.substring(0, 100)}`;
       }
-      
+
       setError(msg);
     } finally {
       setLoading(false);

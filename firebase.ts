@@ -14,6 +14,16 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// Debug: log if env vars are missing (common Vercel build-time issue)
+if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.projectId) {
+  console.error('[Firebase] CRITICAL: Missing env vars!', {
+    apiKey: !!firebaseConfig.apiKey,
+    authDomain: !!firebaseConfig.authDomain,
+    projectId: !!firebaseConfig.projectId,
+    appId: !!firebaseConfig.appId,
+  });
+}
+
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
