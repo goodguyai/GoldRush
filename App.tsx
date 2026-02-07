@@ -19,7 +19,7 @@ import Navigation from './Navigation';
 import MiniBuySlot from './MiniBuySlot';
 import { calculateUserScore } from './scoringEngine';
 import { updateWaveInCloud, updateTeamInCloud, joinLeagueInCloud, fetchLeagueData, deleteLeagueInCloud, signOut, listenToLeague, listenToTeams, addResultToLeague, listenToChat, sendChatMessage, createLeagueInCloud, updateLeagueSettingsInCloud, moveUserToWave, initializeDraftState, quickFixLeagueDraft, createBotInWave, clearLeagueResults } from './databaseService';
-import { listenToEvents, mergeWithStaticData, syncEventsToFirebase } from './olympicDataService';
+import { listenToEvents, mergeWithStaticData, syncEventsToFirebase, markEventFinished } from './services/olympicDataService';
 import { auth, db } from './firebase';
 import ToastProvider, { useToast } from './Toast';
 import WalletModal from './WalletModal';
@@ -548,7 +548,37 @@ const AppShell: React.FC = () => {
     const user = allUsers.find(u => u.id === userId);
     if (!user) return;
     const updatedUser = { ...user, ...updates };
+
+    // If poolId changed, also move user in wave participants/draftOrder
+    if (updates.poolId && updates.poolId !== user.poolId) {
+      try {
+        await moveUserToWave(session.leagueId, userId, user.poolId, updates.poolId);
+        // Also sync draft state so the new wave picks them up
+        await initializeDraftState(session.leagueId, updates.poolId, {
+          resetPicks: false,
+          shuffleOrder: false,
+        });
+        // Re-sync old wave too
+        try {
+          await initializeDraftState(session.leagueId, user.poolId, {
+            resetPicks: false,
+            shuffleOrder: false,
+          });
+        } catch { /* old wave might be empty now, that's ok */ }
+      } catch (e: any) {
+        console.error('[Commish] Move user to wave failed:', e);
+        // Still update team doc even if wave move fails
+      }
+    }
+
     await updateTeamInCloud(session.leagueId, updatedUser);
+
+    // Force refresh to pick up changes
+    const freshData = await fetchLeagueData(session.leagueId);
+    if (freshData) {
+      setAllUsers(freshData.users);
+      setLeagueSettings(freshData.settings);
+    }
   };
 
   // NEW: Create Test Bot for Draft Testing using databaseService
@@ -755,12 +785,18 @@ const AppShell: React.FC = () => {
           // If coming from Commissioner Dashboard manual inject, mark as test
           const enrichedResult: MedalResult = {
               ...result,
-              source: result.source || 'test',
+              source: result.source || 'manual',
               timestamp: Date.now()
           };
-          
+
           setLiveResults(prev => [...prev, enrichedResult]);
           await addResultToLeague(session.leagueId, enrichedResult);
+
+          // Also mark the event as Finished in Firebase
+          if (result.eventId) {
+            markEventFinished(session.leagueId, result.eventId).catch(() => {});
+          }
+
           toast.success("Result added");
       } catch (e) {
           toast.error("Failed to add result");

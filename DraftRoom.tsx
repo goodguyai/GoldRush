@@ -240,45 +240,85 @@ const DraftRoom: React.FC<DraftRoomProps> = ({
   // --- WAITING ROOM ---
   if (isScheduled) {
       return (
-          <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-8 bg-neu-base">
-              <div className="w-32 h-32 bg-neu-base rounded-full flex items-center justify-center text-electric-600 animate-pulse shadow-neu-flat">
-                  <Clock size={56} />
-              </div>
-              
-              <div>
-                  <h2 className="text-3xl font-black uppercase italic text-gray-900 mb-2 tracking-tighter">Locked Down</h2>
-                  <p className="text-sm font-bold text-gray-500 max-w-xs mx-auto">
-                      League Division {wave.id} standby.
-                  </p>
-              </div>
-              
-              <div className="neu-card min-w-[280px] p-8">
-                  {timeToStart > 0 ? (
-                      <>
-                          <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Deploy In</div>
-                          <div className="text-5xl font-black text-electric-600 font-mono tracking-tight text-shadow-sm">
-                              {formatTime(timeToStart)}
-                          </div>
-                      </>
-                  ) : (
-                      <>
-                          <div className="text-xl font-black text-gray-900 mb-2">Ready to Launch</div>
-                          <div className="text-xs font-bold text-orange-500 animate-pulse uppercase tracking-widest">Awaiting Commissioner</div>
-                      </>
-                  )}
+          <div className="flex flex-col h-full bg-neu-base">
+              {/* Hero header */}
+              <div className="flex-shrink-0 bg-gradient-to-br from-gray-900 via-gray-800 to-electric-900 px-6 pt-10 pb-8 relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-10">
+                      <div className="absolute top-4 right-4"><Clock size={140} className="text-white" /></div>
+                  </div>
+                  <div className="relative z-10 text-center">
+                      <div className="w-20 h-20 bg-white/10 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
+                          <Lock size={32} className="text-electric-400" />
+                      </div>
+                      <h2 className="text-2xl font-black uppercase italic text-white mb-1 tracking-tight">Division {wave.id}</h2>
+                      <p className="text-sm font-medium text-white/60">
+                          {wave.name || `Draft Pool ${wave.id}`}
+                      </p>
+                  </div>
               </div>
 
+              {/* Content */}
+              <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 space-y-6">
+                  {/* Countdown */}
+                  <div className="neu-card w-full max-w-sm p-6 text-center">
+                      {timeToStart > 0 ? (
+                          <>
+                              <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Draft Begins In</div>
+                              <div className="text-4xl sm:text-5xl font-black text-electric-600 font-mono tracking-tight leading-none">
+                                  {formatTime(timeToStart)}
+                              </div>
+                              <div className="mt-3 text-[10px] text-gray-400 font-medium">
+                                  {new Date(wave.draftStartTime).toLocaleString(undefined, {
+                                      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                                  })}
+                              </div>
+                          </>
+                      ) : (
+                          <>
+                              <div className="w-4 h-4 rounded-full bg-green-500 animate-pulse mx-auto mb-3 shadow-[0_0_12px_rgba(34,197,94,0.5)]" />
+                              <div className="text-xl font-black text-gray-900 mb-1">Ready to Launch</div>
+                              <div className="text-xs font-bold text-orange-500 animate-pulse uppercase tracking-widest">Awaiting Commissioner</div>
+                          </>
+                      )}
+                  </div>
+
+                  {/* Participants */}
+                  <div className="w-full max-w-sm">
+                      <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                          Players Waiting ({participants.length})
+                      </div>
+                      <div className="neu-inset rounded-2xl p-3">
+                          <div className="flex flex-wrap gap-2">
+                              {participants.map((pid, i) => {
+                                  const u = users.find(u => u.id === pid);
+                                  return (
+                                      <div key={pid} className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
+                                          <div className="w-2 h-2 rounded-full bg-green-400" />
+                                          <span className="text-xs font-bold text-gray-700">{u?.name || `Player ${i + 1}`}</span>
+                                          {u?.isBot && <span className="text-[8px] bg-purple-100 text-purple-600 px-1 rounded font-black">BOT</span>}
+                                      </div>
+                                  );
+                              })}
+                              {participants.length === 0 && (
+                                  <div className="text-xs text-gray-400 italic py-2 w-full text-center">No players joined yet</div>
+                              )}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Commissioner Controls */}
               {isCommissionerMode && (
-                  <div className="space-y-4 w-full max-w-xs">
-                      <button 
+                  <div className="flex-shrink-0 p-4 pb-safe space-y-3 border-t border-gray-200/50">
+                      <button
                         onClick={() => { if(onUpdateWave) onUpdateWave({ ...wave, status: 'live' }); }}
-                        className="neu-button primary w-full py-4 text-sm gap-3"
+                        className="w-full py-4 bg-green-500 text-white rounded-2xl font-black uppercase tracking-wider text-sm flex items-center justify-center gap-3 shadow-lg shadow-green-500/30 active:scale-[0.98] transition-transform"
                       >
-                          <Play size={20} /> Force Start Now
+                          <Play size={20} /> Start Draft Now
                       </button>
-                      <button 
+                      <button
                         onClick={() => { if(onCommishUpdate) onCommishUpdate('init', ''); }}
-                        className="neu-button w-full py-3 text-xs text-gray-500"
+                        className="w-full py-2.5 text-gray-400 font-bold text-[11px] uppercase tracking-wide"
                       >
                           Reset / Initialize
                       </button>
@@ -604,9 +644,13 @@ const DraftRoom: React.FC<DraftRoomProps> = ({
                                                               handleManualDraft(country.code);
                                                           }
                                                       }}
-                                                      className="w-12 h-12 ml-3 flex-shrink-0 rounded-full bg-neu-base flex items-center justify-center text-electric-600 shadow-neu-flat active:shadow-neu-pressed transition-all active:scale-95 border border-white/50"
+                                                      className="w-14 h-14 ml-3 flex-shrink-0 rounded-full flex items-center justify-center text-white font-black text-xs uppercase tracking-wide shadow-lg active:scale-90 transition-all"
+                                                      style={{
+                                                          background: `linear-gradient(135deg, ${countryColors.gradientStart || countryColors.primaryColor}, ${countryColors.gradientEnd || countryColors.primaryColor})`,
+                                                          boxShadow: `0 4px 14px ${countryColors.primaryColor}40`
+                                                      }}
                                                   >
-                                                      <Plus size={20} />
+                                                      <Plus size={22} strokeWidth={3} />
                                                   </button>
                                               )}
                                           </div>
@@ -752,7 +796,7 @@ const DraftRoom: React.FC<DraftRoomProps> = ({
                     
                     {/* Quick Actions */}
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             onClick={() => {
                                 if(onCommishUpdate && currentPickerId && availableCountries.length > 0) {
                                     const random = availableCountries[Math.floor(Math.random() * availableCountries.length)].code;
@@ -767,6 +811,16 @@ const DraftRoom: React.FC<DraftRoomProps> = ({
                             <RotateCcw size={12} /> Undo
                         </button>
                     </div>
+
+                    {/* Pause Draft */}
+                    {wave.status === 'live' && onUpdateWave && (
+                        <button
+                            onClick={() => onUpdateWave({ ...wave, status: 'scheduled' })}
+                            className="w-full mt-2 py-2 bg-yellow-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md"
+                        >
+                            <AlertTriangle size={12} /> Pause Draft
+                        </button>
+                    )}
                 </div>
             </div>
         )}

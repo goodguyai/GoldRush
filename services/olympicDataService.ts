@@ -1,149 +1,73 @@
 
 /**
  * Olympic Data Service
- * Syncs event data from RapidAPI Olympics endpoint
- * Stores in Firebase for persistence and real-time updates
  *
- * IMPORTANT: We only track MEDAL events (finals). Preliminary rounds
- * (heats, qualifiers, semis, etc.) are filtered out so they don't
- * pollute event status and lock state.
+ * IMPORTANT: The RapidAPI Olympic Sports API does NOT support 2026 Winter Olympics.
+ * The endpoint /events/winter/2026 returns 404 and the API only has 2024 Paris data.
+ *
+ * Current approach:
+ * - Static event data (staticData.ts) is the source of truth for event definitions
+ * - Firebase stores event status + medal results per league
+ * - Commissioner manually enters results via the Scoring tab
+ * - syncEventsToFirebase() seeds Firebase from static data (only if empty)
+ * - Event status is updated when commissioners add medal results
+ *
+ * If a working API is found in the future, fetchOlympicEvents() can be updated.
  */
 
 import { db } from './firebase';
 import { OlympicEvent } from '../types';
-import { API_HOST, RAPID_API_KEY } from '../constants';
-
-interface RapidAPIEvent {
-  id: string;
-  sport: string;
-  discipline: string;
-  event_name: string;
-  gender: string;
-  start_time: string; // ISO date string
-  venue: string;
-  status: string;
-  phase?: string;     // e.g. "qualification", "semifinal", "final"
-  round?: string;     // e.g. "Heat 1", "Run 1", "Qualification"
-}
+import { INITIAL_EVENTS } from '../staticData';
 
 /**
- * Detect if an API event is a preliminary/non-medal round.
- * These should NOT update our medal event status.
+ * Sync static events to Firebase for a league.
+ * Only writes if the league has no events yet (avoids overwriting manual status updates).
+ * Pass force=true to overwrite existing events (preserves status where possible).
  */
-const isPreliminaryEvent = (e: RapidAPIEvent): boolean => {
-  const name = (e.event_name || '').toLowerCase();
-  const phase = (e.phase || '').toLowerCase();
-  const round = (e.round || '').toLowerCase();
-  const status = (e.status || '').toLowerCase();
-  const combined = `${name} ${phase} ${round} ${status}`;
-
-  const prelimPatterns = [
-    'qualif', 'prelim', 'heat', 'quarter', 'semi',
-    'round of', 'repechage', 'seeding', 'ranking',
-    'training', 'practice', 'inspection',
-    'run 1', 'run 2', 'leg 1', 'leg 2',
-    'short program', 'rhythm dance',  // figure skating prelim phases
-    'group a', 'group b', 'group c',  // round-robin groups
-    'round robin',
-  ];
-
-  return prelimPatterns.some(p => combined.includes(p));
-};
-
-/**
- * Fetch events from RapidAPI Olympics endpoint.
- * Filters to medal events only — preliminary rounds are excluded.
- */
-export const fetchOlympicEvents = async (): Promise<OlympicEvent[]> => {
+export const syncEventsToFirebase = async (leagueId: string, force = false): Promise<number> => {
   try {
-    const response = await fetch(
-      `https://${API_HOST}/events/winter/2026`,
-      {
-        headers: {
-          'x-rapidapi-key': RAPID_API_KEY,
-          'x-rapidapi-host': API_HOST
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.warn(`[OlympicData] API Error: ${response.status}`);
-      return [];
-    }
-
-    const data = await response.json();
-    const rawEvents: RapidAPIEvent[] = data.events || [];
-
-    // Filter: only keep medal events, reject preliminary rounds
-    const medalEvents = rawEvents.filter(e => {
-      if (isPreliminaryEvent(e)) {
-        return false; // Drop heats, qualifiers, semis, etc.
-      }
-      return true; // Keep finals, medal events, and untagged events
-    });
-
-    console.log(`[OlympicData] ${rawEvents.length} raw → ${medalEvents.length} medal events (filtered ${rawEvents.length - medalEvents.length} preliminary)`);
-
-    return medalEvents.map((e: RapidAPIEvent) => ({
-      id: e.id || `${e.sport}-${e.event_name}`.replace(/\s+/g, '-').toUpperCase(),
-      sport: e.sport || e.discipline,
-      name: e.event_name,
-      gender: mapGender(e.gender),
-      type: e.event_name.toLowerCase().includes('team') ? 'Team' : 'Individual',
-      status: mapStatus(e.status),
-      startTime: new Date(e.start_time).getTime(),
-      description: `Venue: ${e.venue || 'TBD'}`
-    }));
-  } catch (error) {
-    console.error('[OlympicData] Fetch failed:', error);
-    return [];
-  }
-};
-
-const mapGender = (gender: string): 'Men' | 'Women' | 'Mixed' => {
-  if (!gender) return 'Mixed';
-  const g = gender.toLowerCase();
-  if (g.includes('men') && !g.includes('women')) return 'Men';
-  if (g.includes('women')) return 'Women';
-  return 'Mixed';
-};
-
-const mapStatus = (status: string): 'Scheduled' | 'Live' | 'Finished' => {
-  if (!status) return 'Scheduled';
-  const s = status.toLowerCase();
-  if (s.includes('live') || s.includes('progress')) return 'Live';
-  if (s.includes('finish') || s.includes('complete')) return 'Finished';
-  return 'Scheduled';
-};
-
-/**
- * Store events in Firebase for the league
- * This allows commissioners to sync once and all users see updated data
- */
-export const syncEventsToFirebase = async (leagueId: string): Promise<number> => {
-  try {
-    const events = await fetchOlympicEvents();
-    
-    if (events.length === 0) {
-        console.warn("No events fetched from API, skipping sync.");
-        return 0;
-    }
-    
-    const batch = db.batch();
     const eventsRef = db.collection('leagues').doc(leagueId).collection('events');
-    
-    // Clear existing (batch limit consideration: up to 500 ops)
-    // For 109 events, clear + write = ~218 ops, safe for one batch.
     const existing = await eventsRef.get();
-    existing.docs.forEach(doc => batch.delete(doc.ref));
-    
+
+    // If events already exist and not forcing, skip sync to preserve manual updates
+    if (existing.docs.length > 0 && !force) {
+      console.log(`[OlympicData] League ${leagueId} already has ${existing.docs.length} events, skipping sync.`);
+      return existing.docs.length;
+    }
+
+    // Build map of existing event statuses to preserve them during force sync
+    const existingStatuses = new Map<string, { status: string; startTime?: number }>();
+    if (force) {
+      existing.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.status && data.status !== 'Scheduled') {
+          existingStatuses.set(doc.id, { status: data.status, startTime: data.startTime });
+        }
+      });
+    }
+
+    const batch = db.batch();
+
+    // Clear existing if forcing
+    if (force) {
+      existing.docs.forEach(doc => batch.delete(doc.ref));
+    }
+
+    // Write static events
+    const events = INITIAL_EVENTS;
     events.forEach(event => {
-      batch.set(eventsRef.doc(event.id), event);
+      const preserved = existingStatuses.get(event.id);
+      const eventData = {
+        ...event,
+        // Preserve status if it was already updated (e.g., Finished from manual result entry)
+        status: preserved?.status || event.status || 'Scheduled',
+      };
+      batch.set(eventsRef.doc(event.id), eventData);
     });
-    
+
     await batch.commit();
-    
-    console.log(`[OlympicData] Synced ${events.length} events to league ${leagueId}`);
+
+    console.log(`[OlympicData] Synced ${events.length} events to league ${leagueId}${force ? ' (forced)' : ''}`);
     return events.length;
   } catch (error) {
     console.error('[OlympicData] Sync failed:', error);
@@ -152,60 +76,30 @@ export const syncEventsToFirebase = async (leagueId: string): Promise<number> =>
 };
 
 /**
- * Merge API data with our static data (preserves our intel/descriptions).
- *
- * CRITICAL: Only accepts status updates for medal events.
- * If an API event name contains preliminary indicators (heat, qualifier, etc.),
- * we take the startTime but NOT the status — this prevents prelim completions
- * from locking medal events.
+ * Merge Firebase event data with our static data.
+ * Firebase events may have updated statuses from manual result entry.
+ * Static data has all the metadata (sport, gender, descriptions, etc).
  */
 export const mergeWithStaticData = (
-  apiEvents: OlympicEvent[],
+  firebaseEvents: OlympicEvent[],
   staticEvents: OlympicEvent[]
 ): OlympicEvent[] => {
-  if (!apiEvents || apiEvents.length === 0) return staticEvents;
+  if (!firebaseEvents || firebaseEvents.length === 0) return staticEvents;
 
-  // Preliminary round indicators — if the API event name contains these,
-  // its status should NOT propagate to our medal events
-  const prelimIndicators = [
-    'qualif', 'prelim', 'heat', 'quarter', 'semi',
-    'round of', 'repechage', 'seeding', 'ranking',
-    'training', 'practice', 'inspection',
-    'run 1', 'run 2', 'leg 1', 'leg 2',
-    'short program', 'rhythm dance',
-    'group a', 'group b', 'group c', 'round robin',
-  ];
-
-  const isApiEventPrelim = (apiName: string): boolean => {
-    const lower = apiName.toLowerCase();
-    return prelimIndicators.some(p => lower.includes(p));
-  };
+  // Build a lookup from Firebase events by ID
+  const fbMap = new Map<string, OlympicEvent>();
+  firebaseEvents.forEach(e => fbMap.set(e.id, e));
 
   return staticEvents.map(staticEvent => {
-    // Normalize names for better matching
-    const cleanStaticName = staticEvent.name.toLowerCase().replace(/men's|women's|mixed/g, '').trim();
+    const fbEvent = fbMap.get(staticEvent.id);
 
-    // Find matching API event by sport + approximate name
-    const apiMatch = apiEvents.find(api => {
-      const cleanApiName = api.name.toLowerCase().replace(/men's|women's|mixed/g, '').trim();
-      const sportMatch = api.sport.toLowerCase() === staticEvent.sport.toLowerCase();
-      const genderMatch = api.gender === staticEvent.gender;
-
-      // Fuzzy name check
-      const nameMatch = cleanApiName.includes(cleanStaticName) || cleanStaticName.includes(cleanApiName);
-
-      return sportMatch && genderMatch && nameMatch;
-    });
-
-    if (apiMatch) {
-      // Safety check: if the matched API event looks like a prelim round,
-      // take startTime but keep status as Scheduled
-      const isPrelim = isApiEventPrelim(apiMatch.name);
-
+    if (fbEvent) {
       return {
         ...staticEvent,
-        startTime: apiMatch.startTime,
-        status: isPrelim ? staticEvent.status : (apiMatch.status as any),
+        // Take status from Firebase (may have been updated by commissioner)
+        status: fbEvent.status || staticEvent.status,
+        // Take startTime from Firebase if set
+        startTime: fbEvent.startTime || staticEvent.startTime,
       };
     }
 
@@ -214,10 +108,24 @@ export const mergeWithStaticData = (
 };
 
 /**
+ * Mark an event as Finished in Firebase when a medal result is added.
+ * Called automatically when commissioner adds a result.
+ */
+export const markEventFinished = async (leagueId: string, eventId: string): Promise<void> => {
+  try {
+    const eventRef = db.collection('leagues').doc(leagueId).collection('events').doc(eventId);
+    await eventRef.update({ status: 'Finished' });
+    console.log(`[OlympicData] Marked event ${eventId} as Finished`);
+  } catch (error) {
+    console.error(`[OlympicData] Failed to mark event ${eventId} as Finished:`, error);
+  }
+};
+
+/**
  * Listen to events from Firebase (real-time)
  */
 export const listenToEvents = (
-  leagueId: string, 
+  leagueId: string,
   onUpdate: (events: OlympicEvent[]) => void
 ) => {
   return db.collection('leagues').doc(leagueId).collection('events')
@@ -228,12 +136,21 @@ export const listenToEvents = (
     });
 };
 
+/**
+ * Legacy: fetchOlympicEvents — Returns empty since the API is dead.
+ * Kept for backwards compatibility. If a new API is found, update this.
+ */
+export const fetchOlympicEvents = async (): Promise<OlympicEvent[]> => {
+  console.warn('[OlympicData] RapidAPI Olympic Sports API does not support 2026 Winter Olympics. Using static data.');
+  return [];
+};
+
 // Expose to window for commissioner to run manually via console
 if (typeof window !== 'undefined') {
   (window as any).syncOlympicEvents = async (leagueId: string) => {
-    console.log('Syncing events...');
+    console.log('Syncing static events to Firebase...');
     try {
-        const count = await syncEventsToFirebase(leagueId);
+        const count = await syncEventsToFirebase(leagueId, true);
         console.log(`Done! Synced ${count} events.`);
         return count;
     } catch (e) {
