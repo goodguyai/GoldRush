@@ -208,15 +208,12 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
   };
 
   const handleStartAllDrafts = () => {
-    if (!confirm('Start ALL division drafts simultaneously?')) return;
+    if (!confirm('Start ALL division drafts simultaneously? Draft orders will be randomized.')) return;
     settings.waves.forEach(wave => {
       if (wave.status === 'scheduled') {
-        onUpdateWave({ ...wave, status: 'live' });
+        onStartDraft(wave.id);
       }
     });
-    if (settings.currentPhase === 'setup') {
-      onUpdateSettings({ currentPhase: 'phase1_nation_draft' });
-    }
   };
 
   // User Management Handlers
@@ -481,32 +478,51 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
                   label="Draft Start Time"
                 />
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {wave.status === 'scheduled' && (
-                    <button 
-                      onClick={() => onStartDraft(wave.id)}
-                      className="flex-1 py-2 bg-green-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform"
-                    >
-                      <Play size={14} className="inline mr-1" /> Start Draft
-                    </button>
+                    <>
+                      <button
+                        onClick={() => onStartDraft(wave.id)}
+                        className="flex-1 py-2 bg-green-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform min-w-[100px]"
+                      >
+                        <Play size={14} className="inline mr-1" /> Start Draft
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const result = await initializeDraftState(settings.leagueId, wave.id, {
+                              resetPicks: false,
+                              shuffleOrder: true,
+                            });
+                            toast.success(`Division ${wave.id} order shuffled!`);
+                            if (onRefreshData) onRefreshData();
+                          } catch (e) {
+                            toast.error('Failed to shuffle order');
+                          }
+                        }}
+                        className="flex-1 py-2 bg-orange-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform min-w-[100px]"
+                      >
+                        <Shuffle size={14} className="inline mr-1" /> Shuffle Order
+                      </button>
+                    </>
                   )}
                   {wave.status === 'live' && (
-                    <button 
-                      onClick={() => onUpdateWave({ ...wave, status: 'scheduled' })} 
+                    <button
+                      onClick={() => onUpdateWave({ ...wave, status: 'scheduled' })}
                       className="flex-1 py-2 bg-yellow-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform"
                     >
                       <Pause size={14} className="inline mr-1" /> Pause
                     </button>
                   )}
-                  <button 
+                  <button
                     onClick={() => handleRepairDraft(wave.id)}
-                    className="flex-1 py-2 bg-purple-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform"
+                    className="flex-1 py-2 bg-purple-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform min-w-[80px]"
                   >
                     <RefreshCw size={14} className="inline mr-1" /> Repair
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleResetWave(wave.id)}
-                    className="flex-1 py-2 bg-red-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform"
+                    className="flex-1 py-2 bg-red-500 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-transform min-w-[80px]"
                   >
                     <RotateCcw size={14} className="inline mr-1" /> Reset
                   </button>

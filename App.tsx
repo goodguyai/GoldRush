@@ -1117,7 +1117,16 @@ const AppShell: React.FC = () => {
                   <SectionErrorBoundary name="Commissioner Dashboard">
                       <CommissionerDashboard 
                         settings={leagueSettings} users={enrichedUsers} events={events}
-                        onStartDraft={(wid) => {
+                        onStartDraft={async (wid) => {
+                          // Shuffle draft order on start
+                          try {
+                            await initializeDraftState(session!.leagueId, wid, {
+                              resetPicks: false,
+                              shuffleOrder: true,
+                            });
+                          } catch (e) {
+                            console.error('[Draft] Failed to shuffle order:', e);
+                          }
                           const w = leagueSettings.waves.find(wa => wa.id === wid);
                           if(w) handleUpdateWave({...w, status: 'live'});
                           if (leagueSettings.currentPhase === 'setup') {
