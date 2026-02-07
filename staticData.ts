@@ -33,7 +33,7 @@ const rawEvents = [
   {
     id: 'ALP-5',
     sport: 'Alpine Skiing',
-    name: "Men's Alpine Combined",
+    name: "Men's Combined",
     gender: 'Men',
     intel: "Downhill + Slalom hybrid favors all-rounders. Pinturault (FRA) won 2018, strong again. Swiss and Austrian depth gives medal odds. Event requires top-15 downhill finish to medal - eliminates pure slalom specialists. Watch for technical skiers with speed skills."
   },
@@ -68,7 +68,7 @@ const rawEvents = [
   {
     id: 'ALP-10',
     sport: 'Alpine Skiing',
-    name: "Women's Alpine Combined",
+    name: "Women's Combined",
     gender: 'Women',
     intel: "Versatility test. Shiffrin and Gut-Behrami co-favorites. Swiss women have won 3 of last 4 combined golds. Requires top-20 downhill speed + slalom precision. Event eliminates speed-only racers early. Gut-Behrami 45% medal odds."
   },
@@ -143,23 +143,30 @@ const rawEvents = [
     intel: "France is dynasty - 2022 gold, 3 straight World Championship golds. Norway and Sweden competitive. Relay shooting has spare rounds - pressure slightly reduced. French team depth unmatched. Anchor Anaïs Chevalier-Bouchet clutch. France 65% medal odds."
   },
   {
+    id: 'BIA-11',
+    sport: 'Biathlon',
+    name: "Mixed Relay (4x6km)",
+    gender: 'Mixed',
+    intel: "Combined men's and women's relay format - 2 women (6km each) + 2 men (7.5km each). Norway won 2022 gold. France and Sweden competitive. Mixed format rewards program depth across genders. Norwegian biathlon dynasty extends to mixed relay. Norway 60% medal odds."
+  },
+  {
     id: 'BOB-1',
     sport: 'Bobsleigh',
-    name: "Two-Man Bobsled",
+    name: "Two-Man",
     gender: 'Men',
     intel: "Germany's Francesco Friedrich is GOAT - 2018/2022 double Olympic champion, 13 World titles. Swiss and Canadian crews competitive. German engineering advantage on fast tracks. Start times (first 50m) predict 80% of results. Friedrich 70% gold probability. Germany sled tech superior."
   },
   {
     id: 'BOB-2',
     sport: 'Bobsleigh',
-    name: "Four-Man Bobsled",
+    name: "Four-Man",
     gender: 'Men',
     intel: "Friedrich going for 3rd straight Olympic gold - unprecedented. USA's Hunter Church and Canada's Justin Kripps (2018 co-gold) are threats. 4-man requires perfect push + pilot precision. German sleds have 0.15s/run advantage. Track design favors technical drivers. Friedrich 60% win odds."
   },
   {
     id: 'BOB-3',
     sport: 'Bobsleigh',
-    name: "Two-Woman Bobsled",
+    name: "Two-Woman",
     gender: 'Women',
     intel: "USA's Elana Meyers Taylor is legend - 2022 silver at age 37. Germany's Laura Nolte (2022 gold) and Mariama Jamanka competitive. American women have 3 Olympic golds. Push athlete strength matters more in 2-woman. Home-built USA sleds fast. Meyers Taylor 55% podium odds."
   },
@@ -187,28 +194,112 @@ const rawEvents = [
   {
     id: 'CUR-3',
     sport: 'Curling',
-    name: "Mixed Doubles",
+    name: "Mixed Doubles Tournament",
     gender: 'Mixed',
     intel: "Italy's Amos Mosaner/Stefania Constantini won 2022 (shocking). Great Britain and Sweden strong. Format: 2 players, 8 ends, speed chess of curling. Upset rate 45% - small teams create variance. Sweep technique matters more. Watch for Canadian and Swiss pairs. Italy repeat unlikely."
   },
   {
+    id: 'XC-1',
+    sport: 'Cross-Country Skiing',
+    name: "Men's Sprint Classic",
+    gender: 'Men',
+    intel: "Norway's Johannes Høsflot Klæbo is sprint king - 2018/2022 Olympic sprint gold. Sweden and Finland competitive. Classic technique sprint on 1.5km course. Klæbo's explosive acceleration unmatched. Quarterfinal/semifinal/final elimination format. Klæbo 65% gold probability."
+  },
+  {
+    id: 'XC-2',
+    sport: 'Cross-Country Skiing',
+    name: "Men's 10km Interval Start Freestyle",
+    gender: 'Men',
+    intel: "Individual time trial format - staggered 30-second starts. Norway's Simen Hegstad Krüger and Johannes Høsflot Klæbo lead. Freestyle technique allows skating motion. Norwegian men have dominated distance events. Altitude and waxing conditions critical. Norway 55% medal odds."
+  },
+  {
+    id: 'XC-3',
+    sport: 'Cross-Country Skiing',
+    name: "Men's 10km + 10km Skiathlon",
+    gender: 'Men',
+    intel: "Unique hybrid race - 10km classic then switch skis to 10km freestyle. Rewards versatile skiers. Norway and Finland strong. Pit stop ski change takes 10-15 seconds. Klæbo (NOR) and Niskanen (FIN) favorites. Norway 60% medal probability."
+  },
+  {
+    id: 'XC-4',
+    sport: 'Cross-Country Skiing',
+    name: "Men's 50km Mass Start Classic",
+    gender: 'Men',
+    intel: "The marathon of Nordic skiing. Mass start creates tactical racing over 50km. Norway's distance specialists excel. Classic technique only. Race takes 2+ hours. Pack tactics, breakaways, and sprint finishes. Norwegian endurance depth unmatched. Norway 70% gold odds."
+  },
+  {
+    id: 'XC-5',
+    sport: 'Cross-Country Skiing',
+    name: "Men's Team Sprint Freestyle",
+    gender: 'Men',
+    intel: "Two-person teams alternate legs in sprint relay format. Norway's Klæbo anchors dominant team. Sweden and Finland competitive. Freestyle technique. Fast exchanges critical. Norwegian sprint depth gives huge advantage. Norway 65% gold probability."
+  },
+  {
+    id: 'XC-6',
+    sport: 'Cross-Country Skiing',
+    name: "Men's 4x7.5km Relay",
+    gender: 'Men',
+    intel: "Classic relay format - 4 athletes, alternating classic/freestyle legs. Norway dynasty (multiple Olympic golds). Sweden, Finland, and Russia (if eligible) competitive. Team depth across all 4 legs critical. Norway 75% gold probability."
+  },
+  {
+    id: 'XC-7',
+    sport: 'Cross-Country Skiing',
+    name: "Women's Sprint Classic",
+    gender: 'Women',
+    intel: "Sweden's Jonna Sundling won 2022 gold. USA's Jessie Diggins and Norway's Maiken Caspersen Falla competitive. Classic technique sprint on 1.3km course. Swedish women surging in sprints. Elimination format creates drama. Sundling 50% medal odds."
+  },
+  {
+    id: 'XC-8',
+    sport: 'Cross-Country Skiing',
+    name: "Women's 10km Interval Start Freestyle",
+    gender: 'Women',
+    intel: "Individual time trial in freestyle. Norway's Therese Johaug retired, opening field. Sweden and Finland rising. Freestyle skating technique. Norwegian depth still strong despite Johaug's absence. Wide open race - 40% upset potential."
+  },
+  {
+    id: 'XC-9',
+    sport: 'Cross-Country Skiing',
+    name: "Women's 10km + 10km Skiathlon",
+    gender: 'Women',
+    intel: "Hybrid classic + freestyle race. Requires mastery of both techniques. Sweden and Norway competitive. Ski change strategy matters. Finnish women improving rapidly. Norway-Sweden battle expected. Norway 55% medal odds."
+  },
+  {
+    id: 'XC-10',
+    sport: 'Cross-Country Skiing',
+    name: "Women's 50km Mass Start Classic",
+    gender: 'Women',
+    intel: "Women's marathon distance event. Mass start creates pack racing over 50km. Norway and Sweden dominate distance events. Classic technique endurance test. Race duration 2+ hours. Norwegian women's distance program historically dominant. Norway 65% gold probability."
+  },
+  {
+    id: 'XC-11',
+    sport: 'Cross-Country Skiing',
+    name: "Women's Team Sprint Freestyle",
+    gender: 'Women',
+    intel: "Two-woman teams alternate sprint legs. Sweden's sprint depth gives advantage. Norway and Finland competitive. Freestyle technique. Fast relay exchanges critical. Swedish women have risen to sprint dominance. Sweden 55% gold odds."
+  },
+  {
+    id: 'XC-12',
+    sport: 'Cross-Country Skiing',
+    name: "Women's 4x7.5km Relay",
+    gender: 'Women',
+    intel: "Classic relay format - 4 athletes per team. Norway traditionally dominant. Sweden and Finland competitive. Team depth across classic and freestyle legs. Norway 70% gold probability. Swedish women closing the gap."
+  },
+  {
     id: 'FIG-1',
     sport: 'Figure Skating',
-    name: "Men's Singles",
+    name: "Men's Single Skating",
     gender: 'Men',
     intel: "USA's Ilia Malinin is quad revolution - lands 6 types of quads. Japan's Yuma Kagiyama (2022 silver) and Shoma Uno (2022 gold) strong. Malinin's quad Axel gives 15-point advantage. Artistic vs technical debate. Japanese depth unmatched (3 top-10 skaters). Malinin 60% gold odds if clean."
   },
   {
     id: 'FIG-2',
     sport: 'Figure Skating',
-    name: "Women's Singles",
+    name: "Women's Single Skating",
     gender: 'Women',
     intel: "Wide open after Russian absence. South Korea's Lee Hae-in and Japan's Kaori Sakamoto (2022 gold) lead. USA's Isabeau Levito rising. Triple Axel required for podium - only 5 women land it consistently. Presentation scores (PCS) matter in close races. Sakamoto 50% podium."
   },
   {
     id: 'FIG-3',
     sport: 'Figure Skating',
-    name: "Pairs",
+    name: "Pair Skating",
     gender: 'Mixed',
     intel: "China's Sui Wenjing/Han Cong won 2022 gold, still strong. Italy and Canada competitive. Throw quads and twist lifts separate medalists. Chinese pair skating school dominant (3 straight Olympic golds). Execution matters more than difficulty in judging. China 65% gold probability."
   },
@@ -241,23 +332,30 @@ const rawEvents = [
     intel: "Sweden's Walter Wallberg (2022 gold) defending. Canada and Japan strong. Moguls = turns (60%) + air (20%) + speed (20%). Canadian bump skiing tradition deep. Wallberg's triple full gives edge. Upset rate 30% - consistency matters. Sweden 45% medal odds."
   },
   {
+    id: 'FREE-2B',
+    sport: 'Freestyle Skiing',
+    name: "Men's Dual Moguls",
+    gender: 'Men',
+    intel: "Head-to-head mogul racing format. Two skiers race side-by-side down parallel mogul courses. Judges score turns, air, and speed with direct elimination rounds. Canada and Sweden strong. Format creates exciting bracket-style competition. Higher upset potential than standard moguls."
+  },
+  {
     id: 'FREE-3',
     sport: 'Freestyle Skiing',
-    name: "Men's Halfpipe",
+    name: "Men's Freeski Halfpipe",
     gender: 'Men',
     intel: "USA's Alex Ferreira (2022 silver) and New Zealand's Nico Porteous (2022 gold) lead. Canadian Brendan Mackay rising. Double cork 1620 is baseline trick. Amplitude + technical difficulty + style judged. American/Canadian halfpipe dominance. Porteous 50% gold probability."
   },
   {
     id: 'FREE-4',
     sport: 'Freestyle Skiing',
-    name: "Men's Slopestyle",
+    name: "Men's Freeski Slopestyle",
     gender: 'Men',
     intel: "Switzerland's Andri Ragettli and Canada's Max Moffatt lead. Format: rails + jumps scored for creativity. Triple cork 1800s standard on jumps. Weather-dependent - wind cancels runs. Swiss team has 3 X-Games golds this year. Canadian depth gives 60% medal rate."
   },
   {
     id: 'FREE-5',
     sport: 'Freestyle Skiing',
-    name: "Men's Big Air",
+    name: "Men's Freeski Big Air",
     gender: 'Men',
     intel: "Norway's Birk Ruud (2022 gold) defending. Best 2 of 3 tricks count. Quad cork 1980 is cutting edge. Big air rewards risk-taking - fall rate 40%. Ruud's switch triple 1980 gives advantage. Swiss and Canadian riders threatening. Ruud 45% repeat odds."
   },
@@ -283,23 +381,30 @@ const rawEvents = [
     intel: "Australia's Jakara Anthony (2022 gold) defending. USA's Jaelin Kauf (2022 silver) strong. French women rising. Cork 720 air required for podium. Australian program surging - 2 recent World golds. Anthony 55% medal probability."
   },
   {
+    id: 'FREE-8B',
+    sport: 'Freestyle Skiing',
+    name: "Women's Dual Moguls",
+    gender: 'Women',
+    intel: "Head-to-head mogul racing between two women on parallel courses. Direct elimination bracket format. Australia's Anthony and USA's Kauf lead. Scoring combines turns, air tricks, and speed. Creates dramatic side-by-side racing. Higher upset rate than individual moguls."
+  },
+  {
     id: 'FREE-9',
     sport: 'Freestyle Skiing',
-    name: "Women's Halfpipe",
+    name: "Women's Freeski Halfpipe",
     gender: 'Women',
     intel: "China's Gu Ailing (Eileen Gu) won 2022 gold, still dominant. Canada's Cassie Sharpe and USA's Brita Sigourney competitive. Gu's double cork 1440s + amplitude unmatched. Chinese funding behind Gu is massive. Gu 70% win probability if healthy."
   },
   {
     id: 'FREE-10',
     sport: 'Freestyle Skiing',
-    name: "Women's Slopestyle",
+    name: "Women's Freeski Slopestyle",
     gender: 'Women',
     intel: "Switzerland's Mathilde Gremaud (2022 gold) and Estonia's Kelly Sildaru lead. Rails sections separated top skiers. Switch double 1260 on jumps is standard. Swiss women dominate X-Games. Gremaud's rail creativity gives 10-point edge. Switzerland 60% podium odds."
   },
   {
     id: 'FREE-11',
     sport: 'Freestyle Skiing',
-    name: "Women's Big Air",
+    name: "Women's Freeski Big Air",
     gender: 'Women',
     intel: "Gu Ailing won 2022, heavy favorite. France's Tess Ledeux competitive. Women's triple cork 1620 now possible. Gu does both switch and regular big spins. Best 2 of 3 format rewards consistency + risk. Gu 65% gold odds."
   },
@@ -348,9 +453,16 @@ const rawEvents = [
   {
     id: 'LUG-3',
     sport: 'Luge',
-    name: "Doubles",
-    gender: 'Mixed',
+    name: "Men's Doubles",
+    gender: 'Men',
     intel: "Germany's Wendl/Arlt dynasty (2 Olympic golds) ended. Austria's Steu/Koller lead. German doubles program historically 80% medal rate. Doubles requires matched body positioning for aerodynamics. Austria 55% gold odds."
+  },
+  {
+    id: 'LUG-3B',
+    sport: 'Luge',
+    name: "Women's Doubles",
+    gender: 'Women',
+    intel: "New Olympic event for 2026. Women's doubles luge making its debut. Germany and Austria expected to lead based on their doubles program depth. Two-person sled with synchronized weight shifts through curves. German and Austrian women's luge programs will translate doubles expertise. Wide open inaugural event."
   },
   {
     id: 'LUG-4',
@@ -362,23 +474,23 @@ const rawEvents = [
   {
     id: 'NOR-1',
     sport: 'Nordic Combined',
-    name: "Individual Normal Hill",
+    name: "Individual Gundersen Normal Hill/10km",
     gender: 'Men',
     intel: "Norway's Jarl Magnus Riiber is dominant (5x World Champion). Germany and Austria competitive. Format: ski jump converts to time advantage in 10km XC race. Riiber's jump (K-point+) gives 30s lead. Norwegian XC skiing depth. Riiber 65% win odds."
   },
   {
     id: 'NOR-2',
     sport: 'Nordic Combined',
-    name: "Individual Large Hill",
+    name: "Individual Gundersen Large Hill/10km",
     gender: 'Men',
     intel: "Riiber again favored. Large hill = bigger time gaps from jump. Germany's Vinzenz Geiger (2022 gold) competitive. Jumping counts more on large hill - 15% advantage. Nordic combined dying sport (removed 2030). Riiber 60% gold odds."
   },
   {
     id: 'NOR-3',
     sport: 'Nordic Combined',
-    name: "Team Large Hill",
+    name: "Team Sprint",
     gender: 'Men',
-    intel: "Norway has won 3 of last 4 Olympic team golds. Format: 4-man team jump + 4x5km relay. Norwegian team depth gives 45s+ advantage. Germany and Austria chase. Team strategy: save strongest XC skier for anchor. Norway 75% gold probability."
+    intel: "New format replacing team large hill. 2-athlete teams combining ski jumping + cross-country sprint relay. Norway has won 3 of last 4 Olympic team golds. Norwegian team depth gives advantage. Germany and Austria chase. Norway 70% gold probability."
   },
   {
     id: 'SHORT-1',
@@ -439,58 +551,93 @@ const rawEvents = [
   {
     id: 'SHORT-9',
     sport: 'Short Track',
-    name: "Mixed 2000m Relay",
+    name: "Mixed Team Relay",
     gender: 'Mixed',
     intel: "New Olympic event (2022 debut). China won inaugural gold. Format: 2M + 2W, 18 laps. Strategy: who races which laps matters. Mixed relay creates tactical complexity. Italy surprise 2022 silver medalist. China 50% repeat odds."
   },
   {
     id: 'SKEL-1',
     sport: 'Skeleton',
-    name: "Men's",
+    name: "Men's Singles",
     gender: 'Men',
     intel: "Great Britain's Chris Duckworth and Marcus Wyatt lead. China's Yan Wengang (2022 gold) defending. Headfirst sledding at 90mph. British skeleton program has 5 Olympic medals. Start speed predicts 75% of finish. GB 60% medal probability."
   },
   {
     id: 'SKEL-2',
     sport: 'Skeleton',
-    name: "Women's",
+    name: "Women's Singles",
     gender: 'Women',
     intel: "Great Britain's Laura Deas and Germany's Hannah Neise (2022 gold) lead. British women have 3 Olympic golds. Sled customization critical - runner temperature ±0.5°C affects time. Neise's technical piloting superior. GB-Germany battle expected. Germany 55% gold odds."
   },
   {
+    id: 'SKEL-3',
+    sport: 'Skeleton',
+    name: "Mixed Team",
+    gender: 'Mixed',
+    intel: "Combined men's and women's skeleton team event. Nations combine their best male and female sliders' times. Great Britain and Germany lead with program depth across both genders. Team format rewards nations with strong programs on both sides. GB and Germany co-favorites at 50% medal odds."
+  },
+  {
     id: 'SKI-1',
     sport: 'Ski Jumping',
-    name: "Men's Normal Hill Individual",
+    name: "Men's Individual Normal Hill",
     gender: 'Men',
     intel: "Norway's Halvor Egner Granerud and Austria's Stefan Kraft lead. Normal hill K-point 108m. Telemark landing + style scored. Norwegian program resurgent. Wind lottery affects 30% of jumps. Granerud 50% medal odds."
   },
   {
     id: 'SKI-2',
     sport: 'Ski Jumping',
-    name: "Men's Large Hill Individual",
+    name: "Men's Individual Large Hill",
     gender: 'Men',
     intel: "Large hill K-point 125m - bigger jumps, more prestigious. Germany's Karl Geiger and Poland's Kamil Stoch (2-time Olympic champion) competitive. Stoch chasing history (age 38). Ski jumping has oldest Olympic medalist ever (46). Geiger 45% gold probability."
   },
   {
     id: 'SKI-3',
     sport: 'Ski Jumping',
-    name: "Men's Team Large Hill",
+    name: "Men's Super Team",
     gender: 'Men',
-    intel: "Austria won 2022 team gold. Germany and Norway strong. Format: 4 jumpers, 8 jumps total. Team depth critical - weakest jumper costs medals. Austrian team consistency gives edge. Wind conditions affect all equally. Austria 55% repeat odds."
+    intel: "Revamped team format replacing traditional team large hill. Austria won 2022 team gold. Germany and Norway strong. Team depth critical - weakest jumper costs medals. Austrian team consistency gives edge. Wind conditions affect all equally. Austria 55% repeat odds."
   },
   {
     id: 'SKI-4',
     sport: 'Ski Jumping',
-    name: "Women's Normal Hill Individual",
+    name: "Women's Individual Normal Hill",
     gender: 'Women',
     intel: "Slovenia's Nika Kriznar (2022 gold) and Germany's Katharina Althaus lead. Women's ski jumping (Olympic since 2014) growing fast. German women have 4 Olympic medals. K-point 90m for women. Althaus's consistency vs Kriznar's big jumps. Germany 50% medal probability."
   },
   {
+    id: 'SKI-4B',
+    sport: 'Ski Jumping',
+    name: "Women's Individual Large Hill",
+    gender: 'Women',
+    intel: "New Olympic event for 2026 - women jump on the large hill for the first time. K-point 125m creates bigger distances and more dramatic jumps. Germany's Althaus and Slovenia's Kriznar favorites. Historic milestone for women's ski jumping. Translates normal hill form to larger venue. Germany 50% medal probability."
+  },
+  {
     id: 'SKI-5',
     sport: 'Ski Jumping',
-    name: "Mixed Team Normal Hill",
+    name: "Mixed Team",
     gender: 'Mixed',
     intel: "Slovenia won 2022 mixed team gold. Format: 2M + 2W, 8 jumps. Program depth matters more than star power. Austria and Germany competitive. Mixed team creates strategic choices. Slovenia 45% repeat odds."
+  },
+  {
+    id: 'SKMO-1',
+    sport: 'Ski Mountaineering',
+    name: "Men's Sprint",
+    gender: 'Men',
+    intel: "Brand new Olympic sport debuting at Milano-Cortina 2026. Athletes race uphill on skis with skins, transition, then ski downhill. Sprint format is short and explosive. Switzerland, Italy, and France dominate the World Cup circuit. European alpine nations have massive advantage. Switzerland 55% gold probability."
+  },
+  {
+    id: 'SKMO-2',
+    sport: 'Ski Mountaineering',
+    name: "Women's Sprint",
+    gender: 'Women',
+    intel: "Olympic debut in 2026. Women's sprint ski mountaineering - uphill skiing with skins, transition, and downhill race. Italy has home advantage in the Dolomites. Switzerland and France competitive. European mountain nations dominate. Italy 50% gold odds with home course knowledge."
+  },
+  {
+    id: 'SKMO-3',
+    sport: 'Ski Mountaineering',
+    name: "Mixed Relay",
+    gender: 'Mixed',
+    intel: "Mixed team relay combining male and female athletes in ski mountaineering. Olympic debut 2026. Switzerland and Italy co-favorites with deepest talent pools across both genders. France and Austria competitive. Home Italian crowd advantage. Italy-Switzerland battle for gold expected."
   },
   {
     id: 'SNOW-1',
