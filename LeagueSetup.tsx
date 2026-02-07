@@ -69,73 +69,75 @@ const CustomDatePicker = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white rounded-[32px] shadow-2xl p-6 max-w-sm w-full border border-gray-100">
-                <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center animate-fade-in">
+            <div className="bg-white rounded-t-[32px] sm:rounded-[32px] shadow-2xl max-w-sm w-full border border-gray-100 max-h-[90dvh] flex flex-col">
+                <div className="flex items-center justify-between p-6 pb-4 flex-shrink-0">
                     <h3 className="font-black text-lg text-gray-900 uppercase italic">Set Start Time</h3>
                     <button onClick={onClose} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all text-gray-500">
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Calendar Nav */}
-                <div className="flex items-center justify-between mb-4 px-2">
-                    <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth()-1)))} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="rotate-180" size={16}/></button>
-                    <span className="font-bold text-gray-900">{viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                    <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth()+1)))} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight size={16}/></button>
-                </div>
+                <div className="overflow-y-auto flex-1 px-6 pb-6">
+                    {/* Calendar Nav */}
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth()-1)))} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="rotate-180" size={16}/></button>
+                        <span className="font-bold text-gray-900">{viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                        <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth()+1)))} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight size={16}/></button>
+                    </div>
 
-                {/* Grid */}
-                <div className="grid grid-cols-7 gap-1 mb-6 text-center">
-                    {['S','M','T','W','T','F','S'].map(d => <div key={d} className="text-[10px] font-bold text-gray-400 mb-2">{d}</div>)}
-                    {generateCalendar().map((date, i) => {
-                        if (!date) return <div key={i} />;
-                        const isSelected = date.getDate() === selectedDate.getDate() && date.getMonth() === selectedDate.getMonth();
-                        const isToday = new Date().toDateString() === date.toDateString();
-                        return (
-                            <button 
-                                key={i} 
-                                onClick={() => handleDateClick(date)}
-                                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center mx-auto ${
-                                    isSelected ? 'bg-electric-600 text-white shadow-lg' : isToday ? 'text-electric-600 bg-electric-50' : 'text-gray-700 hover:bg-gray-100'
-                                }`}
+                    {/* Grid */}
+                    <div className="grid grid-cols-7 gap-1 mb-6 text-center">
+                        {['S','M','T','W','T','F','S'].map(d => <div key={d} className="text-[10px] font-bold text-gray-400 mb-2">{d}</div>)}
+                        {generateCalendar().map((date, i) => {
+                            if (!date) return <div key={i} />;
+                            const isSelected = date.getDate() === selectedDate.getDate() && date.getMonth() === selectedDate.getMonth();
+                            const isToday = new Date().toDateString() === date.toDateString();
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => handleDateClick(date)}
+                                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center mx-auto ${
+                                        isSelected ? 'bg-electric-600 text-white shadow-lg' : isToday ? 'text-electric-600 bg-electric-50' : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {date.getDate()}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Time Picker */}
+                    <div className="flex gap-4 mb-6">
+                        <div className="flex-1 space-y-1">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Hour</label>
+                            <select
+                                value={selectedDate.getHours()}
+                                onChange={(e) => handleTimeChange('hours', e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-electric-500"
                             >
-                                {date.getDate()}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Time Picker */}
-                <div className="flex gap-4 mb-6">
-                    <div className="flex-1 space-y-1">
-                        <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Hour</label>
-                        <select 
-                            value={selectedDate.getHours()} 
-                            onChange={(e) => handleTimeChange('hours', e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-electric-500"
-                        >
-                            {Array.from({length: 24}).map((_, i) => <option key={i} value={i}>{i.toString().padStart(2,'0')}:00</option>)}
-                        </select>
+                                {Array.from({length: 24}).map((_, i) => <option key={i} value={i}>{i.toString().padStart(2,'0')}:00</option>)}
+                            </select>
+                        </div>
+                        <div className="flex-1 space-y-1">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Minute</label>
+                            <select
+                                value={selectedDate.getMinutes()}
+                                onChange={(e) => handleTimeChange('minutes', e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-electric-500"
+                            >
+                                {Array.from({length: 12}).map((_, i) => <option key={i} value={i*5}>{ (i*5).toString().padStart(2,'0') }</option>)}
+                            </select>
+                        </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                        <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Minute</label>
-                        <select 
-                            value={selectedDate.getMinutes()} 
-                            onChange={(e) => handleTimeChange('minutes', e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-electric-500"
-                        >
-                            {Array.from({length: 12}).map((_, i) => <option key={i} value={i*5}>{ (i*5).toString().padStart(2,'0') }</option>)}
-                        </select>
-                    </div>
-                </div>
 
-                <button 
-                    onClick={() => onSave(selectedDate.getTime())} 
-                    className="w-full py-4 bg-electric-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all"
-                >
-                    Confirm Time
-                </button>
+                    <button
+                        onClick={() => onSave(selectedDate.getTime())}
+                        className="w-full py-4 bg-electric-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all"
+                    >
+                        Confirm Time
+                    </button>
+                </div>
             </div>
         </div>
     );
