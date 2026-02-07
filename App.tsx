@@ -19,7 +19,7 @@ import Navigation from './Navigation';
 import MiniBuySlot from './MiniBuySlot';
 import { calculateUserScore } from './scoringEngine';
 import { updateWaveInCloud, updateTeamInCloud, joinLeagueInCloud, fetchLeagueData, deleteLeagueInCloud, signOut, listenToLeague, listenToTeams, addResultToLeague, listenToChat, sendChatMessage, createLeagueInCloud, updateLeagueSettingsInCloud, moveUserToWave, initializeDraftState, quickFixLeagueDraft, createBotInWave, clearLeagueResults } from './databaseService';
-import { listenToEvents, mergeWithStaticData } from './olympicDataService';
+import { listenToEvents, mergeWithStaticData, syncEventsToFirebase } from './olympicDataService';
 import { auth, db } from './firebase';
 import ToastProvider, { useToast } from './Toast';
 import WalletModal from './WalletModal';
@@ -209,6 +209,11 @@ const AppShell: React.FC = () => {
           setEvents(merged);
         }
       });
+
+      // 4. Auto-cleanup: re-sync Firebase events to purge stale prelim data.
+      // Runs once per league load, fire-and-forget. The listener above will
+      // pick up the cleaned data automatically.
+      syncEventsToFirebase(session.leagueId).catch(() => {});
 
       return () => {
         unsubLeague();
