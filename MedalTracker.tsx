@@ -42,17 +42,20 @@ const MedalTracker: React.FC<MedalTrackerProps> = ({
 
   // Check if CP is locked for this event
   const isCPLocked = (event: OlympicEvent) => {
+    // Commissioners and managers bypass deadline locks
+    if (user.role === 'commissioner' || user.role === 'manager') return false;
+
     if (event.status === 'Finished') return true;
     if (event.status === 'Live') return true;
-    
+
     if (cpDeadlineMode === 'per-event' && event.startTime) {
       return Date.now() >= event.startTime;
     }
-    
+
     if (cpDeadlineMode === 'global' && globalDeadline) {
       return Date.now() >= globalDeadline;
     }
-    
+
     return false;
   };
 

@@ -63,7 +63,7 @@ const AppShell: React.FC = () => {
   }, []);
 
   // --- Session State ---
-  const [session, setSession] = useState<{ userId: string; leagueId: string; role: 'commissioner' | 'player'; selectedWaveId: string; viewMode?: 'commish' | 'team' } | null>(() => {
+  const [session, setSession] = useState<{ userId: string; leagueId: string; role: 'commissioner' | 'manager' | 'player'; selectedWaveId: string; viewMode?: 'commish' | 'team' } | null>(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_PREFIX}session`);
       return saved ? JSON.parse(saved) : null;
@@ -403,7 +403,7 @@ const AppShell: React.FC = () => {
               leagueId: lid, 
               role: role as any, 
               selectedWaveId: targetWaveId, 
-              viewMode: role === 'commissioner' ? 'commish' : 'team' 
+              viewMode: (role === 'commissioner' || role === 'manager') ? 'commish' : 'team'
           });
 
           const myWave = freshData.settings.waves.find(w => w.id === targetWaveId);
@@ -425,6 +425,15 @@ const AppShell: React.FC = () => {
   const handleUpdateWave = async (wave: Wave) => {
     if (!leagueSettings || !session?.leagueId) return;
     await updateWaveInCloud(session.leagueId, wave);
+
+    // Auto-advance phase: if wave just completed, check if all waves are done
+    if (wave.status === 'completed' && leagueSettings.currentPhase === 'phase1_nation_draft') {
+      const updatedWaves = leagueSettings.waves.map(w => w.id === wave.id ? wave : w);
+      const allDone = updatedWaves.every(w => w.status === 'completed');
+      if (allDone) {
+        handleUpdateSettings({ currentPhase: 'phase2_confidence_picks' });
+      }
+    }
   };
 
   const handleUpdateTeam = async (updates: Partial<User>) => {
@@ -462,6 +471,18 @@ const AppShell: React.FC = () => {
     if (isDrafting) return;
     setIsDrafting(true);
     try {
+        // Hard limit: 4 countries max
+        if (currentUser.draftedCountries.length >= 4) {
+            toast.error("Maximum 4 countries reached!");
+            setIsDrafting(false);
+            return;
+        }
+        // Block if draft is completed (players only)
+        if (currentWave?.status === 'completed' && currentUser.role === 'player') {
+            toast.error("Draft is locked!");
+            setIsDrafting(false);
+            return;
+        }
         // Calculate multipliers
         const waveSize = currentWave?.participants?.length || 1;
         const pickIndex = currentWave?.pickIndex || 0;
@@ -578,6 +599,18 @@ const AppShell: React.FC = () => {
     if (freshData) {
       setAllUsers(freshData.users);
       setLeagueSettings(freshData.settings);
+
+      // Auto-complete wave if all users now have 4 countries
+      const targetPoolId = updatedUser.poolId;
+      const wave = freshData.settings.waves.find((w: Wave) => w.id === targetPoolId);
+      if (wave && wave.status !== 'completed') {
+        const waveUsers = freshData.users.filter((u: User) => u.poolId === targetPoolId);
+        const allHave4 = waveUsers.length > 0 && waveUsers.every((u: User) => u.draftedCountries.length >= 4);
+        if (allHave4) {
+          console.log(`[Commish] All users in Division ${targetPoolId} have 4 countries, auto-completing`);
+          await handleUpdateWave({ ...wave, status: 'completed' });
+        }
+      }
     }
   };
 
@@ -664,6 +697,10 @@ const AppShell: React.FC = () => {
         if (!user) return;
 
         if (action === 'draft') {
+            if (user.draftedCountries.length >= 4) {
+                toast.error(`${user.name} already has 4 countries!`);
+                return;
+            }
             const waveSize = currentWave.participants?.length || 1;
             const pickIndex = currentWave.pickIndex || 0;
             const round = Math.floor(pickIndex / waveSize) + 1;
@@ -705,6 +742,10 @@ const AppShell: React.FC = () => {
                 toast.success("Forced Pick");
             }
         } else if (action === 'manual') {
+            if (user.draftedCountries.length >= 4) {
+                toast.error(`${user.name} already has 4 countries!`);
+                return;
+            }
             // Assume end of draft or generic placement for manual
             const round = user.draftedCountries.length + 1;
             const multiplier = [1, 5, 10, 20][Math.min(round - 1, 3)];
@@ -906,7 +947,8 @@ const AppShell: React.FC = () => {
 
   // 6. Main App (League Dashboard)
   const currentWaveId = session.selectedWaveId;
-  const viewMode = session.role === 'commissioner' ? (session.viewMode || 'commish') : 'team';
+  const isPrivilegedRole = session.role === 'commissioner' || session.role === 'manager';
+  const viewMode = isPrivilegedRole ? (session.viewMode || 'commish') : 'team';
   const isViewModeCommish = viewMode === 'commish';
   const isChatTab = currentTab === 'chat';
   
@@ -945,10 +987,10 @@ const AppShell: React.FC = () => {
                   {leagueSettings?.leagueName || 'Gold Hunt'}
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  {currentUser.role === 'commissioner' && (
-                    <span className="text-[9px] font-bold text-gray-500 uppercase">Commissioner</span>
+                  {(currentUser.role === 'commissioner' || currentUser.role === 'manager') && (
+                    <span className="text-[9px] font-bold text-gray-500 uppercase">{currentUser.role === 'commissioner' ? 'Commissioner' : 'Manager'}</span>
                   )}
-                  {currentUser.role === 'commissioner' && <span className="text-gray-300">•</span>}
+                  {(currentUser.role === 'commissioner' || currentUser.role === 'manager') && <span className="text-gray-300">•</span>}
                   {isViewModeCommish ? (
                     <select 
                       value={currentWaveId} 
@@ -1132,9 +1174,15 @@ const AppShell: React.FC = () => {
                                 searchQuery={eventSearchQuery}
                                 showOnlyCPs={showOnlyCPs}
                                 onToggleConfidencePick={(eventId) => {
+                                    // Enforce CB deadline for non-privileged users
+                                    const isPrivileged = currentUser.role === 'commissioner' || currentUser.role === 'manager';
+                                    if (!isPrivileged && leagueSettings?.openingCeremonyLockTime && Date.now() >= leagueSettings.openingCeremonyLockTime) {
+                                        toast.error('Deadline passed — boosts are locked!');
+                                        return;
+                                    }
                                     const has = currentUser.confidenceEvents.includes(eventId);
-                                    const newEvents = has 
-                                        ? currentUser.confidenceEvents.filter(e => e !== eventId) 
+                                    const newEvents = has
+                                        ? currentUser.confidenceEvents.filter(e => e !== eventId)
                                         : [...currentUser.confidenceEvents, eventId];
                                     handleUpdateTeam({ confidenceEvents: newEvents });
                                     toast.success(has ? 'CB Removed' : 'CB Added');

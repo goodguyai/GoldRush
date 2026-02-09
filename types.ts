@@ -53,7 +53,7 @@ export interface User {
   scoreBreakdown?: ScoreBreakdown;
   isBot?: boolean;
   purchasedBoosts: number;
-  role: 'commissioner' | 'player';
+  role: 'commissioner' | 'manager' | 'player';
   timeZone?: string;
 }
 

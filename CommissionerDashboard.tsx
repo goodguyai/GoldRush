@@ -80,7 +80,7 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
   const toast = useToast();
   
   // Tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'waves' | 'teams' | 'settings' | 'scoring' | 'tools'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'waves' | 'teams' | 'assign' | 'settings' | 'scoring' | 'tools'>('overview');
   
   // Modal states
   const [editingWaveId, setEditingWaveId] = useState<string | null>(null);
@@ -114,7 +114,8 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
     draftedCountries: [] as string[],
     confidenceEvents: [] as string[],
     purchasedBoosts: 0,
-    poolId: ''
+    poolId: '',
+    role: 'player' as 'commissioner' | 'manager' | 'player'
   });
 
   // Computed values
@@ -224,13 +225,31 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
       draftedCountries: [...user.draftedCountries],
       confidenceEvents: [...user.confidenceEvents],
       purchasedBoosts: user.purchasedBoosts,
-      poolId: user.poolId
+      poolId: user.poolId,
+      role: user.role || 'player'
     });
   };
 
   const handleSaveUserEdit = async () => {
     if (!editingUser || !onUpdateTeam) return;
-    
+
+    // Enforce 4-country maximum
+    if (editForm.draftedCountries.length > 4) {
+        toast.error("Cannot assign more than 4 countries per user!");
+        return;
+    }
+
+    // Enforce within-division uniqueness
+    const divisionUsers = users.filter(u =>
+        u.poolId === (editForm.poolId || editingUser.poolId) && u.id !== editingUser.id
+    );
+    const divisionCountries = new Set(divisionUsers.flatMap(u => u.draftedCountries));
+    const duplicates = editForm.draftedCountries.filter(code => divisionCountries.has(code));
+    if (duplicates.length > 0) {
+        toast.error(`Already taken in this division: ${duplicates.join(', ')}`);
+        return;
+    }
+
     // Rebuild detailed info to match updated countries
     const currentDetails = editingUser.draftedCountriesDetailed || [];
     const newDetails = editForm.draftedCountries.map((code, idx) => {
@@ -696,7 +715,27 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
                   ))}
                 </select>
               </div>
-              
+
+              {/* Role */}
+              <div>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
+                  Role
+                </label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, role: e.target.value as any }))}
+                  className={NEU_INPUT_CLASS}
+                  style={NEU_INPUT_STYLE}
+                >
+                  <option value="player">Player</option>
+                  <option value="manager">League Manager</option>
+                  <option value="commissioner">Commissioner</option>
+                </select>
+                <p className="text-[9px] text-gray-400 mt-1 pl-1">
+                  Managers can edit all rosters and confidence boosts.
+                </p>
+              </div>
+
               {/* Drafted Countries */}
               <div>
                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
@@ -737,11 +776,17 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
                     style={NEU_INPUT_STYLE}
                   >
                     <option value="">+ Add nation...</option>
-                    {COUNTRIES.filter(c => !editForm.draftedCountries.includes(c.code))
-                      .map(c => (
+                    {(() => {
+                      const divUsers = users.filter(u =>
+                        u.poolId === (editForm.poolId || editingUser?.poolId) && u.id !== editingUser?.id
+                      );
+                      const takenInDiv = new Set(divUsers.flatMap(u => u.draftedCountries));
+                      return COUNTRIES.filter(c =>
+                        !editForm.draftedCountries.includes(c.code) && !takenInDiv.has(c.code)
+                      ).map(c => (
                         <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
-                      ))
-                    }
+                      ));
+                    })()}
                   </select>
                 )}
               </div>
@@ -1136,6 +1181,94 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
     </div>
   );
 
+  const renderAssign = () => (
+    <div className="space-y-6">
+      <div className="neu-card p-5 rounded-[24px]">
+        <div className="flex items-center gap-3 mb-4">
+          <Flag size={20} className="text-electric-600" />
+          <div>
+            <h3 className="text-sm font-black text-gray-900 uppercase italic">Offline Country Assignment</h3>
+            <p className="text-[10px] text-gray-500 mt-0.5">Assign countries without running a live draft. 4 max per user, no duplicates within a division.</p>
+          </div>
+        </div>
+      </div>
+
+      {settings.waves.map(wave => {
+        const waveUsers = usersByWave[wave.id] || [];
+        const usersComplete = waveUsers.filter(u => u.draftedCountries.length >= 4).length;
+        const allComplete = waveUsers.length > 0 && usersComplete === waveUsers.length;
+        const takenCodes = new Set(waveUsers.flatMap(u => u.draftedCountries));
+
+        return (
+          <div key={wave.id} className="neu-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg italic ${
+                  wave.status === 'completed' ? 'bg-blue-100 text-blue-600' :
+                  allComplete ? 'bg-green-100 text-green-600' :
+                  'bg-gray-100 text-gray-500'
+                }`}>
+                  {wave.id}
+                </div>
+                <div>
+                  <div className="font-black text-gray-900">Division {wave.id}</div>
+                  <div className="text-[10px] text-gray-500 font-medium">
+                    {usersComplete}/{waveUsers.length} users complete • {takenCodes.size} countries assigned
+                  </div>
+                </div>
+              </div>
+              {wave.status !== 'completed' && allComplete && (
+                <button
+                  onClick={() => onUpdateWave({ ...wave, status: 'completed' })}
+                  className="px-4 py-2 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase shadow-md active:scale-95 transition-transform"
+                >
+                  <Lock size={12} className="inline mr-1" /> Lock Division
+                </button>
+              )}
+              {wave.status === 'completed' && (
+                <div className="px-3 py-1.5 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase border border-blue-200">
+                  Locked
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {waveUsers.map(user => (
+                <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm text-gray-900 truncate">{user.name}</div>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {user.draftedCountries.map((code, idx) => (
+                        <div key={code} className="px-2 py-0.5 bg-white border border-gray-200 rounded-lg text-[10px] font-bold text-gray-700">
+                          {code} <span className="text-gray-400">R{idx + 1}</span>
+                        </div>
+                      ))}
+                      {user.draftedCountries.length === 0 && (
+                        <span className="text-[10px] text-gray-400 italic">No countries assigned</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-3">
+                    <span className="text-[10px] font-bold text-gray-400">{user.draftedCountries.length}/4</span>
+                    <button
+                      onClick={() => handleEditUser(user)}
+                      className="w-8 h-8 neu-button rounded-lg flex items-center justify-center text-gray-400 hover:text-electric-600"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {waveUsers.length === 0 && (
+                <div className="text-xs text-gray-400 italic text-center py-3">No users in this division</div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="space-y-6 pb-20 animate-fade-in">
       {/* Neumorphic Segmented Tab Navigation */}
@@ -1144,6 +1277,7 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
           { id: 'overview', label: 'Overview', icon: Eye },
           { id: 'waves', label: 'Divisions', icon: Activity },
           { id: 'teams', label: 'Teams', icon: Users },
+          { id: 'assign', label: 'Assign', icon: Flag },
           { id: 'settings', label: null, icon: Settings },
           { id: 'scoring', label: null, icon: TrendingUp },
           { id: 'tools', label: null, icon: RefreshCw },
@@ -1167,6 +1301,7 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
       {activeTab === 'overview' && renderOverview()}
       {activeTab === 'waves' && renderWaves()}
       {activeTab === 'teams' && renderTeams()}
+      {activeTab === 'assign' && renderAssign()}
       {activeTab === 'settings' && renderSettings()}
       {activeTab === 'scoring' && renderScoring()}
       {activeTab === 'tools' && renderTools()}

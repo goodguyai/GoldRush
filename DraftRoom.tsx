@@ -233,6 +233,19 @@ const DraftRoom: React.FC<DraftRoomProps> = ({
     }
   }, [pickTimeRemaining, handleTimerExpired]);
 
+  // Auto-complete: transition wave to 'completed' when all picks are in
+  const autoCompleteRef = useRef(false);
+  useEffect(() => {
+    if (isDraftComplete && wave.status === 'live' && onUpdateWave && !autoCompleteRef.current) {
+        autoCompleteRef.current = true;
+        console.log('[Draft] All picks complete, auto-transitioning to completed');
+        onUpdateWave({ ...wave, status: 'completed' });
+    }
+    // Reset guard if draft status changes back (e.g. reset)
+    if (!isDraftComplete || wave.status !== 'live') {
+        autoCompleteRef.current = false;
+    }
+  }, [isDraftComplete, wave.status, wave.id]);
 
   const handleManualDraft = (code: string) => { onDraftCountry(code); };
   const toggleCountryExpand = (code: string) => { setExpandedCountryCode(expandedCountryCode === code ? null : code); };
@@ -344,7 +357,7 @@ const DraftRoom: React.FC<DraftRoomProps> = ({
                   Draft Complete!
                 </h1>
                 <p className="text-electric-100 text-xs font-medium mt-0.5">
-                  Your nations are locked in. Time for strategy.
+                  Draft locked. Countries cannot be changed. Time for confidence boosts.
                 </p>
               </div>
             </div>
