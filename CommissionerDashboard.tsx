@@ -107,6 +107,14 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
   // Clipboard state
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
+  // Live Sync State
+  const [syncState, setSyncState] = useState<'idle' | 'fetching' | 'preview' | 'importing'>('idle');
+  const [syncedResults, setSyncedResults] = useState<Array<{ eventId: string; sport: string; eventName: string; gold: string; silver: string; bronze: string; confidence: number }>>([]);
+  const [unmappedResults, setUnmappedResults] = useState<Array<{ sport: string; eventName: string; gold: string; silver: string; bronze: string }>>([]);
+  const [selectedForImport, setSelectedForImport] = useState<Set<string>>(new Set());
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
   // User Edit State
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({
@@ -954,12 +962,207 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
     </div>
   );
 
+  // ── Live Sync Handlers ──
+  const handleFetchLiveResults = async () => {
+    setSyncState('fetching');
+    setSyncError(null);
+    try {
+      const response = await fetch('/api/sync-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leagueId: settings.leagueId })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+
+      // Filter out results that already exist in our league
+      const existingEventIds = new Set(results.map(r => r.eventId));
+      const newResults = (data.results || []).filter((r: any) => !existingEventIds.has(r.eventId));
+
+      setSyncedResults(newResults);
+      setUnmappedResults(data.unmapped || []);
+      setSelectedForImport(new Set(newResults.map((r: any) => r.eventId)));
+      setLastSyncTime(data.fetchedAt);
+      setSyncState('preview');
+
+      if (newResults.length === 0 && (data.results || []).length > 0) {
+        toast.success(`All ${data.results.length} scraped results already imported!`);
+      } else if (newResults.length === 0) {
+        toast.error('No results found — Olympics.com may have changed their page layout. Use manual entry below.');
+        setSyncState('idle');
+      }
+    } catch (error: any) {
+      console.error('[LiveSync] Fetch failed:', error);
+      setSyncError(error.message);
+      toast.error('Sync failed: ' + error.message);
+      setSyncState('idle');
+    }
+  };
+
+  const handleImportSelected = async () => {
+    setSyncState('importing');
+    let imported = 0;
+    for (const result of syncedResults) {
+      if (!selectedForImport.has(result.eventId)) continue;
+      onAddTestResult({
+        eventId: result.eventId,
+        gold: result.gold,
+        silver: result.silver,
+        bronze: result.bronze,
+        source: 'live',
+        timestamp: Date.now()
+      });
+      imported++;
+      // Small delay to avoid Firebase write contention
+      await new Promise(r => setTimeout(r, 200));
+    }
+    toast.success(`Imported ${imported} live results!`);
+    setSyncState('idle');
+    setSyncedResults([]);
+    setUnmappedResults([]);
+  };
+
   const renderScoring = () => {
     const selectedUser = users.find(u => u.id === verifyUserId);
     const verification = selectedUser ? verifyScoring(selectedUser, results, events) : null;
-    
+
     return (
       <div className="space-y-6">
+        {/* ── Live Results Sync ── */}
+        <div className="neu-card p-5 space-y-4 border-2 border-electric-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-electric-100 flex items-center justify-center">
+                <Zap size={20} className="text-electric-600" />
+              </div>
+              <div>
+                <div className="text-[10px] font-black text-electric-600 uppercase tracking-widest">Live Results Sync</div>
+                <div className="text-[9px] text-gray-500 mt-0.5">
+                  {lastSyncTime ? `Last synced: ${Math.round((Date.now() - lastSyncTime) / 60000)}m ago` : 'Fetch medal results from Olympics.com'}
+                </div>
+              </div>
+            </div>
+            {results.length > 0 && (
+              <div className="px-2 py-1 bg-green-100 rounded-lg text-[9px] font-bold text-green-700">
+                {results.length} results
+              </div>
+            )}
+          </div>
+
+          {syncState === 'idle' && (
+            <button
+              onClick={handleFetchLiveResults}
+              className="w-full neu-button primary py-3.5 text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={16} /> Fetch Live Results
+            </button>
+          )}
+
+          {syncState === 'fetching' && (
+            <div className="flex items-center justify-center gap-3 py-4">
+              <RefreshCw size={16} className="animate-spin text-electric-600" />
+              <span className="text-sm font-bold text-gray-600">Scraping Olympics.com...</span>
+            </div>
+          )}
+
+          {syncError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+              <span className="font-bold">Error:</span> {syncError}
+            </div>
+          )}
+
+          {syncState === 'preview' && syncedResults.length > 0 && (
+            <div className="space-y-3">
+              <div className="text-[10px] font-black text-gray-500 uppercase">
+                {syncedResults.length} New Results Found
+              </div>
+              <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                {syncedResults.map(r => {
+                  const isSelected = selectedForImport.has(r.eventId);
+                  const event = events.find(e => e.id === r.eventId);
+                  return (
+                    <div
+                      key={r.eventId}
+                      onClick={() => {
+                        const next = new Set(selectedForImport);
+                        if (isSelected) next.delete(r.eventId); else next.add(r.eventId);
+                        setSelectedForImport(next);
+                      }}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                        isSelected ? 'bg-electric-50 border-2 border-electric-300' : 'bg-gray-50 border-2 border-transparent'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${
+                        isSelected ? 'bg-electric-500 border-electric-500' : 'border-gray-300'
+                      }`}>
+                        {isSelected && <Check size={12} className="text-white" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-gray-800 truncate">
+                          {event?.name || r.eventName}
+                        </div>
+                        <div className="text-[9px] text-gray-500">{r.sport}</div>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-black text-yellow-600">{r.gold}</span>
+                        <span className="text-[10px] font-black text-gray-400">{r.silver}</span>
+                        <span className="text-[10px] font-black text-amber-700">{r.bronze}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {unmappedResults.length > 0 && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+                  <div className="text-[10px] font-bold text-yellow-700 mb-1">
+                    {unmappedResults.length} events couldn't be matched
+                  </div>
+                  <div className="text-[9px] text-yellow-600">
+                    {unmappedResults.map(u => u.eventName).join(', ')}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleImportSelected}
+                  disabled={selectedForImport.size === 0}
+                  className="flex-1 neu-button primary py-3 text-sm font-black uppercase disabled:opacity-50"
+                >
+                  Import {selectedForImport.size} Results
+                </button>
+                <button
+                  onClick={() => { setSyncState('idle'); setSyncedResults([]); setUnmappedResults([]); }}
+                  className="px-4 neu-button py-3 text-sm"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {syncState === 'preview' && syncedResults.length === 0 && (
+            <div className="text-center py-3">
+              <div className="text-xs text-gray-500">All scraped results already imported.</div>
+              <button
+                onClick={() => setSyncState('idle')}
+                className="mt-2 text-[10px] text-electric-600 font-bold underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {syncState === 'importing' && (
+            <div className="flex items-center justify-center gap-3 py-4">
+              <RefreshCw size={16} className="animate-spin text-green-600" />
+              <span className="text-sm font-bold text-gray-600">Importing results...</span>
+            </div>
+          )}
+        </div>
+
         {/* Manage Results */}
         <div className="neu-card p-5 space-y-4">
           <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">

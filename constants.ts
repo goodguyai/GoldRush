@@ -2,9 +2,8 @@
 import { CountryMetadata } from './types';
 import { WINTER_OLYMPICS_COUNTRIES, EXTENDED_WINTER_NATIONS, ALL_WINTER_NATIONS, CountryData } from './data/olympicCountries';
 
-export const API_HOST = 'olympic-sports-api.p.rapidapi.com';
-export const API_KEY_STORAGE_KEY = 'rapidapi_key';
-export const RAPID_API_KEY = '3050f0627amshed168a553d1b32dp19ab27jsnada117462a73';
+// RapidAPI Olympic Sports API is DEAD (404 for 2026). Removed exposed key.
+// Live results now fetched via /api/sync-results serverless function.
 
 export const SCORING_RULES = {
   GOLD: 5,
