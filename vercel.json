@@ -1,13 +1,3 @@
 {
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "@vercel/node@latest"
-    }
-  },
-  "crons": [
-    {
-      "path": "/api/cron-sync",
-      "schedule": "*/30 * * * *"
-    }
-  ]
+  "framework": "vite"
 }
