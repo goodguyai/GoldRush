@@ -224,6 +224,85 @@ const AppShell: React.FC = () => {
     }
   }, [session?.leagueId, authUser]);
 
+  // --- Auto-Fetch Live Results (every 60 min + on load) ---
+  useEffect(() => {
+    if (!session?.leagueId || !authUser) return;
+
+    let isCancelled = false;
+
+    const autoFetchResults = async () => {
+      try {
+        console.log('[AutoSync] Fetching live results...');
+        const resp = await fetch('/api/sync-results', { method: 'POST' });
+        if (!resp.ok) {
+          console.warn('[AutoSync] API returned', resp.status);
+          return;
+        }
+        const data = await resp.json();
+        const fetchedResults: Array<{ eventId: string; gold: string; silver: string; bronze: string; confidence: number }> = data.results || [];
+
+        if (isCancelled || fetchedResults.length === 0) return;
+
+        // Read current liveResults from latest state via a fresh fetch
+        // (we use a ref-like approach by reading from the listener state)
+        const leagueData = await fetchLeagueData(session.leagueId);
+        const existingResults: MedalResult[] = leagueData?.results || [];
+        const existingEventIds = new Set(existingResults.map(r => r.eventId));
+
+        // Filter to only NEW results not already in Firebase
+        const newResults = fetchedResults.filter(
+          r => r.eventId && !existingEventIds.has(r.eventId) && r.confidence >= 0.5
+        );
+
+        if (newResults.length === 0) {
+          console.log('[AutoSync] No new results to import');
+          return;
+        }
+
+        console.log(`[AutoSync] Importing ${newResults.length} new results`);
+
+        // Import each new result into Firebase
+        for (const r of newResults) {
+          if (isCancelled) break;
+          const medalResult: MedalResult = {
+            eventId: r.eventId,
+            gold: r.gold,
+            silver: r.silver,
+            bronze: r.bronze,
+            source: 'live' as const,
+            timestamp: Date.now(),
+          };
+          try {
+            await addResultToLeague(session.leagueId, medalResult);
+            if (r.eventId) {
+              markEventFinished(session.leagueId, r.eventId).catch(() => {});
+            }
+          } catch (err) {
+            console.warn('[AutoSync] Failed to import', r.eventId, err);
+          }
+        }
+
+        console.log(`[AutoSync] Done — imported ${newResults.length} results`);
+      } catch (err) {
+        console.warn('[AutoSync] Fetch failed:', err);
+      }
+    };
+
+    // Initial fetch after 5s delay (let Firebase listeners settle first)
+    const initialTimeout = setTimeout(() => {
+      if (!isCancelled) autoFetchResults();
+    }, 5000);
+
+    // Then every 60 minutes
+    const interval = setInterval(autoFetchResults, 60 * 60 * 1000);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [session?.leagueId, authUser]);
+
   // MIGRATION: Backfill detailed draft info if missing
   useEffect(() => {
     if (session?.leagueId && currentUser && currentUser.draftedCountries.length > 0) {
