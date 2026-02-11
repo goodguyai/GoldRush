@@ -224,7 +224,7 @@ const AppShell: React.FC = () => {
     }
   }, [session?.leagueId, authUser]);
 
-  // --- Auto-Fetch Live Results (every 60 min + on load) ---
+  // --- Auto-Fetch Live Results (on load + every 2 hours) ---
   useEffect(() => {
     if (!session?.leagueId || !authUser) return;
 
@@ -233,26 +233,15 @@ const AppShell: React.FC = () => {
     const autoFetchResults = async () => {
       try {
         console.log('[AutoSync] Fetching live results...');
-        const resp = await fetch('/api/sync-results', { method: 'POST' });
-        if (!resp.ok) {
-          console.warn('[AutoSync] API returned', resp.status);
-          return;
-        }
-        const data = await resp.json();
-        const fetchedResults: Array<{ eventId: string; gold: string; silver: string; bronze: string; confidence: number }> = data.results || [];
+        const { fetchLiveResults, filterNewResults } = await import('./liveResultsService');
+        const { results: fetched } = await fetchLiveResults();
 
-        if (isCancelled || fetchedResults.length === 0) return;
+        if (isCancelled || fetched.length === 0) return;
 
-        // Read current liveResults from latest state via a fresh fetch
-        // (we use a ref-like approach by reading from the listener state)
+        // Get latest results from Firebase to diff
         const leagueData = await fetchLeagueData(session.leagueId);
         const existingResults: MedalResult[] = leagueData?.results || [];
-        const existingEventIds = new Set(existingResults.map(r => r.eventId));
-
-        // Filter to only NEW results not already in Firebase
-        const newResults = fetchedResults.filter(
-          r => r.eventId && !existingEventIds.has(r.eventId) && r.confidence >= 0.5
-        );
+        const newResults = filterNewResults(fetched, existingResults);
 
         if (newResults.length === 0) {
           console.log('[AutoSync] No new results to import');
@@ -261,22 +250,18 @@ const AppShell: React.FC = () => {
 
         console.log(`[AutoSync] Importing ${newResults.length} new results`);
 
-        // Import each new result into Firebase
         for (const r of newResults) {
           if (isCancelled) break;
-          const medalResult: MedalResult = {
-            eventId: r.eventId,
-            gold: r.gold,
-            silver: r.silver,
-            bronze: r.bronze,
-            source: 'live' as const,
-            timestamp: Date.now(),
-          };
           try {
-            await addResultToLeague(session.leagueId, medalResult);
-            if (r.eventId) {
-              markEventFinished(session.leagueId, r.eventId).catch(() => {});
-            }
+            await addResultToLeague(session.leagueId, {
+              eventId: r.eventId,
+              gold: r.gold,
+              silver: r.silver,
+              bronze: r.bronze,
+              source: 'live',
+              timestamp: Date.now(),
+            });
+            markEventFinished(session.leagueId, r.eventId).catch(() => {});
           } catch (err) {
             console.warn('[AutoSync] Failed to import', r.eventId, err);
           }
@@ -288,13 +273,13 @@ const AppShell: React.FC = () => {
       }
     };
 
-    // Initial fetch after 5s delay (let Firebase listeners settle first)
+    // Initial fetch after 3s (let Firebase listeners settle)
     const initialTimeout = setTimeout(() => {
       if (!isCancelled) autoFetchResults();
-    }, 5000);
+    }, 3000);
 
-    // Then every 60 minutes
-    const interval = setInterval(autoFetchResults, 60 * 60 * 1000);
+    // Then every 2 hours
+    const interval = setInterval(autoFetchResults, 2 * 60 * 60 * 1000);
 
     return () => {
       isCancelled = true;

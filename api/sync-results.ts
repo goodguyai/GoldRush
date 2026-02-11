@@ -20,26 +20,37 @@ export interface ScrapedResult {
 // FORMAT: [eventId, gold, silver, bronze]
 const CONFIRMED_RESULTS: [string, string, string, string][] = [
   // Day 1 — Feb 7
-  ["ALP-1",    "SUI", "ITA", "ITA"],     // Men's Downhill: von Allmen, Franzoni, Paris
-  ["SPEED-11", "ITA", "NED", "NOR"],     // Women's 3000m: Lollobrigida, Schouten, Wiklund→NOR
-  ["SKI-4",    "NOR", "SLO", "JPN"],     // Women's NH Ski Jumping: Strøm, Prevc, Maruyama
-  ["SNOW-3",   "JPN", "JPN", "AUT"],     // Men's Snowboard Big Air: Kimura, Kimata, Kleveland→AUT
-
+  ["ALP-1",    "SUI", "ITA", "ITA"],     // Men's Downhill
+  ["SPEED-11", "ITA", "NOR", "CAN"],     // Women's 3000m
+  ["SKI-4",    "NOR", "SLO", "JPN"],     // Women's NH Ski Jumping
+  ["SNOW-3",   "JPN", "JPN", "CHN"],     // Men's Snowboard Big Air
   // Day 2 — Feb 8
-  ["ALP-6",    "USA", "GER", "ITA"],     // Women's Downhill: Johnson, Aicher, Goggia
+  ["ALP-6",    "USA", "GER", "ITA"],     // Women's Downhill
   ["FIG-5",    "USA", "JPN", "ITA"],     // Figure Skating Team Event
-  ["XC-3",     "NOR", "AUT", "ITA"],     // Men's Skiathlon: Klæbo
-  ["SNOW-4",   "AUT", "KOR", "BUL"],     // Men's PGS: Karl, Kim, Zamfirov
-  ["SNOW-9",   "CZE", "AUT", "ITA"],     // Women's PGS: Maderová
-  ["LUG-1",    "GER", "AUT", "ITA"],     // Men's Luge Singles: Langenhan, Mueller, Fischnaller
-  ["BIA-11",   "FRA", "SWE", "NOR"],     // Biathlon Mixed Relay
-
+  ["XC-3",     "NOR", "FRA", "NOR"],     // Men's Skiathlon
+  ["SPEED-4",  "NOR", "CZE", "ITA"],     // Men's 5000m
+  ["SNOW-4",   "AUT", "KOR", "BUL"],     // Men's PGS
+  ["SNOW-9",   "CZE", "AUT", "ITA"],     // Women's PGS
+  ["LUG-1",    "GER", "AUT", "ITA"],     // Men's Luge Singles
+  ["BIA-11",   "FRA", "ITA", "GER"],     // Biathlon Mixed Relay
   // Day 3 — Feb 9
-  ["FREE-10",  "SUI", "CHN", "CAN"],     // Women's Freeski Slopestyle: Gremaud, Gu, Oldham
-  ["SPEED-9",  "NED", "NED", "JPN"],     // Women's 1000m: Leerdam, Kok, Takagi
-  ["SNOW-8",   "JPN", "NZL", "KOR"],     // Women's Snowboard Big Air: Murase, Sadowski-Synnott, Yu
-  ["SKI-1",    "GER", "POL", "JPN"],     // Men's NH Ski Jumping: Raimund, Tomasiak, Nikaido
-  ["ALP-5",    "SUI", "AUT", "SUI"],     // Men's Combined: von Allmen/Nef team, Kriechmayr/Feller, Odermatt/Meillard
+  ["FREE-10",  "SUI", "CHN", "CAN"],     // Women's Freeski Slopestyle
+  ["SPEED-9",  "NED", "NED", "JPN"],     // Women's 1000m
+  ["SNOW-8",   "JPN", "NZL", "KOR"],     // Women's Snowboard Big Air
+  ["SKI-1",    "GER", "POL", "JPN"],     // Men's NH Ski Jumping
+  ["ALP-5",    "SUI", "AUT", "SUI"],     // Men's Combined
+  // Day 4 — Feb 10
+  ["ALP-10",   "AUT", "GER", "USA"],     // Women's Team Combined
+  ["BIA-2",    "NOR", "FRA", "NOR"],     // Men's 20km Individual
+  ["XC-1",     "NOR", "USA", "NOR"],     // Men's Sprint Classical
+  ["XC-7",     "SWE", "SWE", "SWE"],     // Women's Sprint Classical
+  ["CUR-3",    "SWE", "USA", "ITA"],     // Mixed Doubles Curling
+  ["FREE-4",   "NOR", "USA", "NZL"],     // Men's Freeski Slopestyle
+  ["LUG-2",    "GER", "LAT", "USA"],     // Women's Luge Singles
+  ["SHORT-9",  "ITA", "CAN", "BEL"],     // Short Track Mixed Team Relay
+  ["SKI-5",    "SLO", "NOR", "JPN"],     // Ski Jumping Mixed Team
+  // Day 5 — Feb 11
+  ["ALP-2",    "SUI", "USA", "SUI"],     // Men's Super-G
 ];
 
 /**

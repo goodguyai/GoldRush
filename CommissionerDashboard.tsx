@@ -967,32 +967,33 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
     setSyncState('fetching');
     setSyncError(null);
     try {
-      const response = await fetch('/api/sync-results', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leagueId: settings.leagueId })
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || `HTTP ${response.status}`);
-      }
-      const data = await response.json();
+      const { fetchLiveResults, filterNewResults } = await import('./liveResultsService');
+      const { results: allFetched, source } = await fetchLiveResults();
 
       // Filter out results that already exist in our league
-      const existingEventIds = new Set(results.map(r => r.eventId));
-      const newResults = (data.results || []).filter((r: any) => !existingEventIds.has(r.eventId));
+      const newResults = filterNewResults(allFetched, results);
 
-      setSyncedResults(newResults);
-      setUnmappedResults(data.unmapped || []);
-      setSelectedForImport(new Set(newResults.map((r: any) => r.eventId)));
-      setLastSyncTime(data.fetchedAt);
+      setSyncedResults(newResults.map(r => ({
+        eventId: r.eventId,
+        sport: r.source,
+        eventName: r.eventId,
+        gold: r.gold,
+        silver: r.silver,
+        bronze: r.bronze,
+        confidence: r.confidence,
+      })));
+      setUnmappedResults([]);
+      setSelectedForImport(new Set(newResults.map(r => r.eventId)));
+      setLastSyncTime(Date.now());
       setSyncState('preview');
 
-      if (newResults.length === 0 && (data.results || []).length > 0) {
-        toast.success(`All ${data.results.length} scraped results already imported!`);
+      if (newResults.length === 0 && allFetched.length > 0) {
+        toast.success(`All ${allFetched.length} known results already imported!`);
       } else if (newResults.length === 0) {
-        toast.error('No results found — Olympics.com may have changed their page layout. Use manual entry below.');
+        toast.error('No new results found. Results update as events finish.');
         setSyncState('idle');
+      } else {
+        toast.success(`Found ${newResults.length} new results (source: ${source})`);
       }
     } catch (error: any) {
       console.error('[LiveSync] Fetch failed:', error);
@@ -1041,7 +1042,7 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
               <div>
                 <div className="text-[10px] font-black text-electric-600 uppercase tracking-widest">Live Results Sync</div>
                 <div className="text-[9px] text-gray-500 mt-0.5">
-                  {lastSyncTime ? `Last synced: ${Math.round((Date.now() - lastSyncTime) / 60000)}m ago` : 'Fetch medal results from Olympics.com'}
+                  {lastSyncTime ? `Last synced: ${Math.round((Date.now() - lastSyncTime) / 60000)}m ago` : 'Auto-syncs every 2 hours. Click to sync now.'}
                 </div>
               </div>
             </div>
@@ -1064,7 +1065,7 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
           {syncState === 'fetching' && (
             <div className="flex items-center justify-center gap-3 py-4">
               <RefreshCw size={16} className="animate-spin text-electric-600" />
-              <span className="text-sm font-bold text-gray-600">Scraping Olympics.com...</span>
+              <span className="text-sm font-bold text-gray-600">Fetching live results...</span>
             </div>
           )}
 
