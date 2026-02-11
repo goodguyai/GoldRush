@@ -1,16 +1,16 @@
 
-import React, { useState, useMemo } from 'react';
-import { 
-  Shield, Copy, Calendar, Activity, Lock, Users, ArrowRight, Edit3, X, Plus, 
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import {
+  Shield, Copy, Calendar, Activity, Lock, Users, ArrowRight, Edit3, X, Plus,
   Trash2, ChevronDown, ChevronRight, TrendingUp, ShieldCheck, AlertTriangle,
   Play, Pause, RotateCcw, Settings, Clock, UserPlus, UserMinus, Shuffle,
-  Check, Zap, Eye, RefreshCw, Flag, UserCircle, Whistle
+  Check, Zap, Eye, RefreshCw, Flag, UserCircle, Whistle, Search
 } from './Icons';
 import { LeagueSettings, User, Wave, OlympicEvent, MedalResult } from './types';
-import { COUNTRIES } from './constants';
-import { 
-  updateTeamInCloud, updateWaveInCloud, initializeDraftState, 
-  migrateFixBrokenDrafts, editResultWithAudit 
+import { COUNTRIES, ALL_COUNTRIES } from './constants';
+import {
+  updateTeamInCloud, updateWaveInCloud, initializeDraftState,
+  migrateFixBrokenDrafts, editResultWithAudit
 } from './databaseService';
 import { verifyScoring } from './scoringEngine';
 import CountryBadge from './CountryBadge';
@@ -125,6 +125,13 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
     poolId: '',
     role: 'player' as 'commissioner' | 'manager' | 'player'
   });
+  const [countrySearch, setCountrySearch] = useState('');
+  const [eventSearch, setEventSearch] = useState('');
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [showEventPicker, setShowEventPicker] = useState(false);
+  const [editSection, setEditSection] = useState<'roster' | 'boosts' | 'info'>('roster');
+  const countrySearchRef = useRef<HTMLInputElement>(null);
+  const eventSearchRef = useRef<HTMLInputElement>(null);
 
   // Computed values
   const usersByWave = useMemo(() => {
@@ -236,26 +243,29 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
       poolId: user.poolId,
       role: user.role || 'player'
     });
+    setCountrySearch('');
+    setEventSearch('');
+    setShowCountryPicker(false);
+    setShowEventPicker(false);
+    setEditSection('roster');
   };
 
   const handleSaveUserEdit = async () => {
     if (!editingUser || !onUpdateTeam) return;
 
-    // Enforce 4-country maximum
+    // Commissioner warning (not blocking) for >4 countries
     if (editForm.draftedCountries.length > 4) {
-        toast.error("Cannot assign more than 4 countries per user!");
-        return;
+        if (!confirm(`This user has ${editForm.draftedCountries.length} countries (max is 4). Save anyway? (Commissioner override)`)) return;
     }
 
-    // Enforce within-division uniqueness
+    // Commissioner warning (not blocking) for division duplicates
     const divisionUsers = users.filter(u =>
         u.poolId === (editForm.poolId || editingUser.poolId) && u.id !== editingUser.id
     );
     const divisionCountries = new Set(divisionUsers.flatMap(u => u.draftedCountries));
     const duplicates = editForm.draftedCountries.filter(code => divisionCountries.has(code));
     if (duplicates.length > 0) {
-        toast.error(`Already taken in this division: ${duplicates.join(', ')}`);
-        return;
+        if (!confirm(`${duplicates.join(', ')} already taken in this division. Save anyway? (Commissioner override)`)) return;
     }
 
     // Rebuild detailed info to match updated countries
@@ -275,7 +285,7 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
       ...editForm,
       draftedCountriesDetailed: newDetails
     });
-    
+
     toast.success(`Updated ${editForm.name}`);
     setEditingUser(null);
   };
@@ -676,218 +686,531 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
         </div>
       </div>
 
-      {/* EDIT USER MODAL */}
-      {editingUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-[24px] shadow-2xl p-6 w-full max-w-lg my-8 relative">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-black uppercase italic text-gray-900">
-                Edit User
-              </h3>
-              <button 
-                onClick={() => setEditingUser(null)}
-                className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="space-y-5">
-              {/* Name */}
-              <div>
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                  Team Name
-                </label>
-                <input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                  className={NEU_INPUT_CLASS}
-                  style={NEU_INPUT_STYLE}
-                />
-              </div>
-              
-              {/* Division */}
-              <div>
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                  Division
-                </label>
-                <select
-                  value={editForm.poolId}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, poolId: e.target.value }))}
-                  className={NEU_INPUT_CLASS}
-                  style={NEU_INPUT_STYLE}
-                >
-                  {settings.waves.map(w => (
-                    <option key={w.id} value={w.id}>Division {w.id}</option>
-                  ))}
-                </select>
-              </div>
+      {/* COMMISSIONER EDIT MODAL — Full Control */}
+      {editingUser && (() => {
+        // Compute division context
+        const divUsers = users.filter(u =>
+          u.poolId === (editForm.poolId || editingUser?.poolId) && u.id !== editingUser?.id
+        );
+        const takenInDiv = new Set(divUsers.flatMap(u => u.draftedCountries));
 
-              {/* Role */}
-              <div>
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                  Role
-                </label>
-                <select
-                  value={editForm.role}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, role: e.target.value as any }))}
-                  className={NEU_INPUT_CLASS}
-                  style={NEU_INPUT_STYLE}
-                >
-                  <option value="player">Player</option>
-                  <option value="manager">League Manager</option>
-                  <option value="commissioner">Commissioner</option>
-                </select>
-                <p className="text-[9px] text-gray-400 mt-1 pl-1">
-                  Managers can edit all rosters and confidence boosts.
-                </p>
-              </div>
+        // All countries available to commissioner (ALL_COUNTRIES, not just main list)
+        const filteredCountries = ALL_COUNTRIES.filter(c => {
+          if (editForm.draftedCountries.includes(c.code)) return false;
+          if (!countrySearch) return true;
+          const q = countrySearch.toLowerCase();
+          return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+        });
 
-              {/* Drafted Countries */}
-              <div>
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                  Drafted Nations ({editForm.draftedCountries.length}/4)
-                </label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {editForm.draftedCountries.map((code, idx) => (
-                    <div 
-                      key={code}
-                      className="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200"
-                    >
-                      <span className="text-xs font-bold">{code}</span>
-                      <span className="text-[9px] text-gray-400 font-bold uppercase">R{idx + 1}</span>
-                      <button
-                        onClick={() => setEditForm(prev => ({
-                          ...prev,
-                          draftedCountries: prev.draftedCountries.filter(c => c !== code)
-                        }))}
-                        className="text-red-400 hover:text-red-600 ml-1"
-                      >
-                        <X size={12} />
-                      </button>
+        // Group events by sport for the CB picker
+        const availableEvents = events.filter(e => !editForm.confidenceEvents.includes(e.id));
+        const filteredEvents = availableEvents.filter(e => {
+          if (!eventSearch) return true;
+          const q = eventSearch.toLowerCase();
+          return e.name.toLowerCase().includes(q) || e.sport.toLowerCase().includes(q) || e.id.toLowerCase().includes(q);
+        });
+        const eventsBySport: Record<string, OlympicEvent[]> = {};
+        filteredEvents.forEach(e => {
+          if (!eventsBySport[e.sport]) eventsBySport[e.sport] = [];
+          eventsBySport[e.sport].push(e);
+        });
+
+        const cbMax = 10 + editForm.purchasedBoosts;
+        const roundMultipliers = [1, 5, 10, 20];
+
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center animate-fade-in">
+            <div className="bg-white rounded-t-[32px] sm:rounded-[28px] shadow-2xl w-full max-w-lg max-h-[92dvh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gold-50 flex items-center justify-center">
+                    <Whistle size={18} className="text-gold-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase italic text-gray-900 leading-tight">
+                      {editForm.name || 'Edit User'}
+                    </h3>
+                    <div className="text-[10px] text-gray-400 font-bold">
+                      Div {editForm.poolId} • {editForm.role} • {editForm.draftedCountries.length} nations • {editForm.confidenceEvents.length} CBs
                     </div>
-                  ))}
+                  </div>
                 </div>
-                {editForm.draftedCountries.length < 4 && (
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        setEditForm(prev => ({
-                          ...prev,
-                          draftedCountries: [...prev.draftedCountries, e.target.value]
-                        }));
-                        e.target.value = '';
-                      }
-                    }}
-                    className={NEU_INPUT_CLASS}
-                    style={NEU_INPUT_STYLE}
+                <button
+                  onClick={() => setEditingUser(null)}
+                  className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Section Tabs */}
+              <div className="flex gap-1 px-6 pt-3 pb-2 flex-shrink-0">
+                {([
+                  { id: 'roster', label: 'Roster', icon: Flag, count: editForm.draftedCountries.length },
+                  { id: 'boosts', label: 'Boosts', icon: Zap, count: editForm.confidenceEvents.length },
+                  { id: 'info', label: 'Info', icon: Settings, count: null },
+                ] as const).map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setEditSection(tab.id)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      editSection === tab.id
+                        ? 'bg-gray-900 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
                   >
-                    <option value="">+ Add nation...</option>
-                    {(() => {
-                      const divUsers = users.filter(u =>
-                        u.poolId === (editForm.poolId || editingUser?.poolId) && u.id !== editingUser?.id
-                      );
-                      const takenInDiv = new Set(divUsers.flatMap(u => u.draftedCountries));
-                      return COUNTRIES.filter(c =>
-                        !editForm.draftedCountries.includes(c.code) && !takenInDiv.has(c.code)
-                      ).map(c => (
-                        <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
-                      ));
-                    })()}
-                  </select>
+                    <tab.icon size={13} />
+                    {tab.label}
+                    {tab.count !== null && (
+                      <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${
+                        editSection === tab.id ? 'bg-white/20' : 'bg-gray-200'
+                      }`}>{tab.count}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+
+                {/* ═══════ ROSTER SECTION ═══════ */}
+                {editSection === 'roster' && (
+                  <>
+                    {/* Current Countries */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                          Drafted Nations ({editForm.draftedCountries.length}/4)
+                        </label>
+                        {editForm.draftedCountries.length > 4 && (
+                          <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg">
+                            Over limit!
+                          </span>
+                        )}
+                      </div>
+
+                      {editForm.draftedCountries.length === 0 ? (
+                        <div className="text-center py-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                          <Flag size={24} className="text-gray-300 mx-auto mb-2" />
+                          <div className="text-xs text-gray-400 font-bold">No countries assigned</div>
+                          <div className="text-[10px] text-gray-400">Tap "Add Country" below</div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {editForm.draftedCountries.map((code, idx) => {
+                            const colors = COUNTRY_COLORS[code];
+                            const countryName = ALL_COUNTRIES.find(c => c.code === code)?.name || code;
+                            const isDivDupe = takenInDiv.has(code);
+                            const mult = roundMultipliers[Math.min(idx, 3)];
+
+                            return (
+                              <div
+                                key={code}
+                                className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${
+                                  isDivDupe ? 'border-amber-300 bg-amber-50' : 'border-gray-100 bg-gray-50'
+                                }`}
+                              >
+                                {/* Country color dot */}
+                                <div
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-sm flex-shrink-0"
+                                  style={{ background: colors?.primaryColor || '#6B7280' }}
+                                >
+                                  {code}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-bold text-sm text-gray-900 truncate">{countryName}</div>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[9px] font-black text-gray-400 uppercase">Round {idx + 1}</span>
+                                    <span className="text-[9px] font-black text-electric-600 bg-electric-50 px-1.5 py-0.5 rounded">{mult}x</span>
+                                    {isDivDupe && (
+                                      <span className="text-[9px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">Taken in div</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Move up/down + remove */}
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  {idx > 0 && (
+                                    <button
+                                      onClick={() => {
+                                        const arr = [...editForm.draftedCountries];
+                                        [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+                                        setEditForm(prev => ({ ...prev, draftedCountries: arr }));
+                                      }}
+                                      className="w-7 h-7 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 text-xs"
+                                      title="Move up (higher multiplier)"
+                                    >
+                                      ↑
+                                    </button>
+                                  )}
+                                  {idx < editForm.draftedCountries.length - 1 && (
+                                    <button
+                                      onClick={() => {
+                                        const arr = [...editForm.draftedCountries];
+                                        [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+                                        setEditForm(prev => ({ ...prev, draftedCountries: arr }));
+                                      }}
+                                      className="w-7 h-7 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 text-xs"
+                                      title="Move down (lower multiplier)"
+                                    >
+                                      ↓
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => setEditForm(prev => ({
+                                      ...prev,
+                                      draftedCountries: prev.draftedCountries.filter(c => c !== code)
+                                    }))}
+                                    className="w-7 h-7 bg-red-50 border border-red-200 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-100"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add Country Picker */}
+                    <div>
+                      {!showCountryPicker ? (
+                        <button
+                          onClick={() => { setShowCountryPicker(true); setTimeout(() => countrySearchRef.current?.focus(), 100); }}
+                          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-2xl text-xs font-black text-gray-500 uppercase tracking-wide hover:border-electric-400 hover:text-electric-600 hover:bg-electric-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Plus size={14} /> Add Country
+                        </button>
+                      ) : (
+                        <div className="bg-gray-50 rounded-2xl border-2 border-electric-200 overflow-hidden">
+                          {/* Search Input */}
+                          <div className="flex items-center gap-2 px-3 py-2.5 bg-white border-b border-gray-100">
+                            <Search size={14} className="text-gray-400 flex-shrink-0" />
+                            <input
+                              ref={countrySearchRef}
+                              type="text"
+                              placeholder="Search countries..."
+                              value={countrySearch}
+                              onChange={(e) => setCountrySearch(e.target.value)}
+                              className="flex-1 text-sm font-bold text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+                            />
+                            <button
+                              onClick={() => { setShowCountryPicker(false); setCountrySearch(''); }}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+
+                          {/* Country Grid */}
+                          <div className="max-h-48 overflow-y-auto p-2">
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {filteredCountries.slice(0, 60).map(c => {
+                                const colors = COUNTRY_COLORS[c.code];
+                                const isTakenInDiv = takenInDiv.has(c.code);
+                                return (
+                                  <button
+                                    key={c.code}
+                                    onClick={() => {
+                                      setEditForm(prev => ({
+                                        ...prev,
+                                        draftedCountries: [...prev.draftedCountries, c.code]
+                                      }));
+                                      setCountrySearch('');
+                                      setShowCountryPicker(false);
+                                    }}
+                                    className={`flex items-center gap-1.5 px-2 py-2 rounded-xl text-left transition-all active:scale-95 ${
+                                      isTakenInDiv
+                                        ? 'bg-amber-50 border border-amber-200 hover:bg-amber-100'
+                                        : 'bg-white border border-gray-100 hover:border-electric-300 hover:bg-electric-50'
+                                    }`}
+                                  >
+                                    <div
+                                      className="w-6 h-6 rounded-md flex items-center justify-center text-white text-[8px] font-black flex-shrink-0"
+                                      style={{ background: colors?.primaryColor || '#6B7280' }}
+                                    >
+                                      {c.code}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-[10px] font-bold text-gray-900 truncate">{c.name}</div>
+                                      {isTakenInDiv && (
+                                        <div className="text-[8px] font-bold text-amber-600">In div</div>
+                                      )}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {filteredCountries.length === 0 && (
+                              <div className="text-center py-4 text-xs text-gray-400">No matches</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* ═══════ BOOSTS SECTION ═══════ */}
+                {editSection === 'boosts' && (
+                  <>
+                    {/* Current CBs */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                          Confidence Boosts ({editForm.confidenceEvents.length}/{cbMax})
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-gray-400 font-bold">Slots:</span>
+                          <button
+                            onClick={() => setEditForm(prev => ({ ...prev, purchasedBoosts: Math.max(0, prev.purchasedBoosts - 1) }))}
+                            className="w-6 h-6 bg-gray-100 rounded-md flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs font-black"
+                          >−</button>
+                          <span className="text-xs font-black text-gray-700 w-8 text-center">{cbMax}</span>
+                          <button
+                            onClick={() => setEditForm(prev => ({ ...prev, purchasedBoosts: prev.purchasedBoosts + 1 }))}
+                            className="w-6 h-6 bg-electric-100 rounded-md flex items-center justify-center text-electric-600 hover:bg-electric-200 text-xs font-black"
+                          >+</button>
+                        </div>
+                      </div>
+
+                      {editForm.confidenceEvents.length === 0 ? (
+                        <div className="text-center py-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                          <Zap size={24} className="text-gray-300 mx-auto mb-2" />
+                          <div className="text-xs text-gray-400 font-bold">No confidence boosts</div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                          {editForm.confidenceEvents.map(eventId => {
+                            const event = events.find(e => e.id === eventId);
+                            const hasResult = results.find(r => r.eventId === eventId);
+                            return (
+                              <div
+                                key={eventId}
+                                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all ${
+                                  hasResult ? 'bg-green-50 border border-green-200' : 'bg-electric-50 border border-electric-100'
+                                }`}
+                              >
+                                <Zap size={12} className={hasResult ? 'text-green-600' : 'text-electric-600'} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[11px] font-bold text-gray-900 truncate">
+                                    {event?.name || eventId}
+                                  </div>
+                                  <div className="text-[9px] text-gray-500 font-medium">{event?.sport || 'Unknown'}</div>
+                                </div>
+                                {hasResult && (
+                                  <span className="text-[8px] font-black text-green-600 bg-green-100 px-1.5 py-0.5 rounded">Done</span>
+                                )}
+                                <button
+                                  onClick={() => setEditForm(prev => ({
+                                    ...prev,
+                                    confidenceEvents: prev.confidenceEvents.filter(e => e !== eventId)
+                                  }))}
+                                  className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 flex-shrink-0"
+                                >
+                                  <X size={11} />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Clear All CBs */}
+                      {editForm.confidenceEvents.length > 0 && (
+                        <button
+                          onClick={() => setEditForm(prev => ({ ...prev, confidenceEvents: [] }))}
+                          className="w-full mt-2 py-2 text-[10px] font-bold text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors"
+                        >
+                          Clear All Boosts
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Add Event Picker */}
+                    <div>
+                      {!showEventPicker ? (
+                        <button
+                          onClick={() => { setShowEventPicker(true); setTimeout(() => eventSearchRef.current?.focus(), 100); }}
+                          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-2xl text-xs font-black text-gray-500 uppercase tracking-wide hover:border-electric-400 hover:text-electric-600 hover:bg-electric-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Plus size={14} /> Add Confidence Boost
+                        </button>
+                      ) : (
+                        <div className="bg-gray-50 rounded-2xl border-2 border-electric-200 overflow-hidden">
+                          {/* Search Input */}
+                          <div className="flex items-center gap-2 px-3 py-2.5 bg-white border-b border-gray-100">
+                            <Search size={14} className="text-gray-400 flex-shrink-0" />
+                            <input
+                              ref={eventSearchRef}
+                              type="text"
+                              placeholder="Search events..."
+                              value={eventSearch}
+                              onChange={(e) => setEventSearch(e.target.value)}
+                              className="flex-1 text-sm font-bold text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+                            />
+                            <button
+                              onClick={() => { setShowEventPicker(false); setEventSearch(''); }}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+
+                          {/* Events by Sport */}
+                          <div className="max-h-56 overflow-y-auto p-2 space-y-2">
+                            {Object.entries(eventsBySport).sort((a, b) => a[0].localeCompare(b[0])).map(([sport, sportEvents]) => (
+                              <div key={sport}>
+                                <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-2 py-1 sticky top-0 bg-gray-50">
+                                  {sport} ({sportEvents.length})
+                                </div>
+                                <div className="space-y-0.5">
+                                  {sportEvents.map(e => {
+                                    const hasResult = results.find(r => r.eventId === e.id);
+                                    return (
+                                      <button
+                                        key={e.id}
+                                        onClick={() => {
+                                          setEditForm(prev => ({
+                                            ...prev,
+                                            confidenceEvents: [...prev.confidenceEvents, e.id]
+                                          }));
+                                          setEventSearch('');
+                                        }}
+                                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left bg-white border border-gray-100 hover:border-electric-300 hover:bg-electric-50 transition-all active:scale-[0.98]"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-[11px] font-bold text-gray-900 truncate">{e.name}</div>
+                                        </div>
+                                        {hasResult && (
+                                          <span className="text-[8px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">Finished</span>
+                                        )}
+                                        <Plus size={12} className="text-gray-400 flex-shrink-0" />
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                            {Object.keys(eventsBySport).length === 0 && (
+                              <div className="text-center py-4 text-xs text-gray-400">No matching events</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* ═══════ INFO SECTION ═══════ */}
+                {editSection === 'info' && (
+                  <>
+                    {/* Name */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
+                        Team Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                        className={NEU_INPUT_CLASS}
+                        style={NEU_INPUT_STYLE}
+                      />
+                    </div>
+
+                    {/* Division */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
+                        Division
+                      </label>
+                      <select
+                        value={editForm.poolId}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, poolId: e.target.value }))}
+                        className={NEU_INPUT_CLASS}
+                        style={NEU_INPUT_STYLE}
+                      >
+                        {settings.waves.map(w => (
+                          <option key={w.id} value={w.id}>Division {w.id} ({(usersByWave[w.id] || []).length} players)</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Role */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
+                        Role
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([
+                          { value: 'player', label: 'Player', icon: UserCircle, color: 'gray' },
+                          { value: 'manager', label: 'Manager', icon: ShieldCheck, color: 'purple' },
+                          { value: 'commissioner', label: 'Commish', icon: Whistle, color: 'gold' },
+                        ] as const).map(r => (
+                          <button
+                            key={r.value}
+                            onClick={() => setEditForm(prev => ({ ...prev, role: r.value as any }))}
+                            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                              editForm.role === r.value
+                                ? `border-${r.color}-400 bg-${r.color}-50 shadow-sm`
+                                : 'border-gray-100 bg-gray-50 hover:border-gray-300'
+                            }`}
+                          >
+                            <r.icon size={18} className={editForm.role === r.value ? `text-${r.color}-600` : 'text-gray-400'} />
+                            <span className={`text-[10px] font-black uppercase ${
+                              editForm.role === r.value ? 'text-gray-900' : 'text-gray-500'
+                            }`}>{r.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Purchased Boosts */}
+                    <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
+                        Purchased Boost Slots
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setEditForm(prev => ({ ...prev, purchasedBoosts: Math.max(0, prev.purchasedBoosts - 1) }))}
+                          className="w-12 h-12 neu-button rounded-xl text-lg font-black text-gray-500"
+                        >−</button>
+                        <div className="flex-1 text-center">
+                          <div className="text-3xl font-black text-electric-600 italic">{editForm.purchasedBoosts}</div>
+                          <div className="text-[9px] text-gray-400 font-bold">extra slots (total: {cbMax})</div>
+                        </div>
+                        <button
+                          onClick={() => setEditForm(prev => ({ ...prev, purchasedBoosts: prev.purchasedBoosts + 1 }))}
+                          className="w-12 h-12 neu-button rounded-xl text-lg font-black text-electric-600"
+                        >+</button>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-              
-              {/* Confidence Boosts */}
-              <div>
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                  Confidence Boosts ({editForm.confidenceEvents.length}/{10 + editForm.purchasedBoosts})
-                </label>
-                <div className="flex flex-wrap gap-2 mb-2 max-h-32 overflow-y-auto custom-scrollbar">
-                  {editForm.confidenceEvents.map(eventId => {
-                    const event = events.find(e => e.id === eventId);
-                    return (
-                      <div 
-                        key={eventId}
-                        className="flex items-center gap-1.5 bg-electric-50 px-3 py-1.5 rounded-lg border border-electric-100"
-                      >
-                        <Zap size={10} className="text-electric-600" />
-                        <span className="text-[10px] font-bold text-electric-700 truncate max-w-[120px]">
-                          {event?.name || eventId}
-                        </span>
-                        <button
-                          onClick={() => setEditForm(prev => ({
-                            ...prev,
-                            confidenceEvents: prev.confidenceEvents.filter(e => e !== eventId)
-                          }))}
-                          className="text-red-400 hover:text-red-600 ml-1"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-                <select
-                  onChange={(e) => {
-                    if (e.target.value && editForm.confidenceEvents.length < 10 + editForm.purchasedBoosts) {
-                      setEditForm(prev => ({
-                        ...prev,
-                        confidenceEvents: [...prev.confidenceEvents, e.target.value]
-                      }));
-                      e.target.value = '';
-                    }
-                  }}
-                  className={NEU_INPUT_CLASS}
-                  style={NEU_INPUT_STYLE}
-                >
-                  <option value="">+ Add Boost...</option>
-                  {events.filter(e => !editForm.confidenceEvents.includes(e.id))
-                    .map(e => (
-                      <option key={e.id} value={e.id}>{e.sport}: {e.name}</option>
-                    ))
-                  }
-                </select>
-              </div>
-              
-              {/* Purchased Boosts */}
-              <div>
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">
-                  Purchased Slots
-                </label>
-                <input
-                  type="number"
-                  value={editForm.purchasedBoosts}
-                  onChange={(e) => setEditForm(prev => ({ 
-                    ...prev, 
-                    purchasedBoosts: Math.max(0, parseInt(e.target.value) || 0)
-                  }))}
-                  className={NEU_INPUT_CLASS}
-                  style={NEU_INPUT_STYLE}
-                  min={0}
-                />
-              </div>
-              
-              {/* Actions */}
-              <div className="flex gap-3 pt-4">
-                <button 
+
+              {/* Sticky Footer Actions */}
+              <div className="flex gap-3 px-6 py-4 border-t border-gray-100 bg-white flex-shrink-0">
+                <button
                   onClick={() => setEditingUser(null)}
-                  className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-gray-200"
+                  className="flex-1 py-3.5 bg-gray-100 text-gray-600 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleSaveUserEdit}
-                  className="flex-1 py-3 bg-electric-600 text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-lg active:scale-95 transition-all"
+                  className="flex-1 py-3.5 bg-electric-600 text-white rounded-xl font-bold text-xs uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  Save Changes
+                  <Check size={14} /> Save Changes
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 
