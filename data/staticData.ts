@@ -329,6 +329,22 @@ const rawEvents = [
     intel: "China won 2022, overwhelming favorites. Format: 3 athletes (1M, 1W, 1 either). Chinese team coordination superior. USA and Switzerland competitive. Team synchronization scored. China has 8-person depth chart. China 75% gold probability."
   },
 
+  // NEW FOR 2026 — Dual Moguls
+  {
+    id: 'FREE-14',
+    sport: 'Freestyle Skiing',
+    name: "Men's Dual Moguls",
+    gender: 'Men',
+    intel: "New event for 2026. Head-to-head bracket format. Canada's Mikaël Kingsbury is the all-time moguls GOAT. Japan's Horishima Ikuma a threat."
+  },
+  {
+    id: 'FREE-15',
+    sport: 'Freestyle Skiing',
+    name: "Women's Dual Moguls",
+    gender: 'Women',
+    intel: "New event for 2026. Head-to-head bracket format. Australia's Jakara Anthony and USA's Elizabeth Lemley among favorites."
+  },
+
   // ICE HOCKEY
   {
     id: 'ICE-1',

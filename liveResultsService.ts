@@ -16,6 +16,7 @@ const CONFIRMED_RESULTS: [string, string, string, string][] = [
   ["SPEED-11", "ITA", "NOR", "CAN"],     // Women's 3000m: Lollobrigida, Wiklund, Maltais
   ["SKI-4",    "NOR", "SLO", "JPN"],     // Women's NH Ski Jumping: Strøm, Prevc, Maruyama
   ["SNOW-3",   "JPN", "JPN", "CHN"],     // Men's Snowboard Big Air: Kimura, Kimata, Su Yiming
+  ["XC-9",     "SWE", "SWE", "NOR"],     // Women's Skiathlon: Karlsson, Andersson, Weng
 
   // Day 2 — Feb 8
   ["ALP-6",    "USA", "GER", "ITA"],     // Women's Downhill: Johnson, Aicher, Goggia
@@ -47,6 +48,49 @@ const CONFIRMED_RESULTS: [string, string, string, string][] = [
 
   // Day 5 — Feb 11
   ["ALP-2",    "SUI", "USA", "SUI"],     // Men's Super-G: von Allmen, Cochran-Siegle, Odermatt
+  ["BIA-7",    "FRA", "FRA", "BUL"],     // Women's 15km Individual: Simon, Jeanmonnot, Hristova
+  ["FIG-4",    "FRA", "USA", "CAN"],     // Ice Dance: Cizeron/Fournier Beaudry, Chock/Bates, Gilles/Poirier
+  ["FREE-8",   "USA", "USA", "FRA"],     // Women's Moguls: Lemley, Kauf, Laffont
+  ["LUG-3",    "ITA", "AUT", "GER"],     // Men's Luge Doubles: Rieder/Kainzwaldner, Steu/Kindl, Wendl/Arlt
+  ["LUG-3B",   "ITA", "GER", "AUT"],     // Women's Luge Doubles: Voetter/Oberhofer, Eitberger/Matschina, Egle/Kipp
+  ["NOR-1",    "NOR", "AUT", "FIN"],     // Nordic Combined NH: Oftebrø, Lamparter, Hirvonen
+  ["SPEED-2",  "USA", "NED", "CHN"],     // Men's 1000m: Stolz, de Boo, Ning Zhongyan
+
+  // Day 6 — Feb 12
+  ["ALP-7",    "ITA", "FRA", "AUT"],     // Women's Super-G: Brignone, Miradoli, Hütter
+  ["FREE-2",   "AUS", "CAN", "JPN"],     // Men's Moguls: Woods, Kingsbury, Horishima
+  ["LUG-4",    "GER", "GER", "AUT"],     // Luge Team Relay: Germany gold
+  ["SHORT-5",  "NED", "ITA", "CAN"],     // Short Track Women's 500m: Velzeboer, Fontana, Sarault
+  ["SHORT-2",  "NED", "CHN", "NED"],     // Short Track Men's 1000m: van 't Wout, Sun Long
+  ["SNOW-6",   "KOR", "USA", "JPN"],     // Women's Snowboard Halfpipe: Choi, Kim, Ono
+  ["SPEED-12", "ITA", "NED", "NOR"],     // Women's 5000m: Lollobrigida, Conijn, Wiklund
+  ["XC-8",     "SWE", "SWE", "USA"],     // Women's 10km: Karlsson, Andersson, Diggins
+
+  // Day 7 — Feb 13
+  ["BIA-1",    "FRA", "NOR", "NOR"],     // Men's 10km Sprint: Fillon Maillet, Christiansen, Laegreid
+  ["FIG-1",    "KAZ", "JPN", "JPN"],     // Men's Figure Skating: Shaidorov, Kagiyama, Sato
+  ["SKEL-1",   "GBR", "GER", "GER"],     // Men's Skeleton: Weston, Jungk, Grotheer
+  ["SNOW-1",   "JPN", "AUS", "JPN"],     // Men's Snowboard Halfpipe: Totsuka, James, Yamada
+  ["SNOW-10",  "AUS", "CZE", "ITA"],     // Women's Snowboard Cross: Baff, Adamczyková, Moioli
+  ["SPEED-5",  "CZE", "POL", "NED"],     // Men's 10000m: Jílek, Semirunniy, Bergsma
+  ["XC-2",     "NOR", "FRA", "NOR"],     // Men's 10km: Klæbo, Desloges, Hedegart
+
+  // Day 8 — Feb 14
+  ["ALP-3",    "BRA", "SUI", "SUI"],     // Men's Giant Slalom: Braathen, Odermatt, Meillard
+  ["BIA-6",    "NOR", "FRA", "FRA"],     // Women's 7.5km Sprint: Kirkeeide, Michelon, Jeanmonnot
+  ["FREE-15",  "AUS", "USA", "USA"],     // Women's Dual Moguls: Anthony, Kauf, Lemley
+  ["SHORT-3",  "NED", "KOR", "LAT"],     // Short Track Men's 1500m: van 't Wout, Hwang, Kruzbergs
+  ["SKEL-2",   "AUT", "GER", "GER"],     // Women's Skeleton: Flock, Kreher, Pfeifer
+  ["SPEED-1",  "USA", "NED", "CAN"],     // Men's 500m: Stolz, de Boo, Dubreuil
+  ["SKI-2",    "SLO", "JPN", "POL"],     // Men's LH Ski Jumping: Prevc, Nikaido, Tomasiak
+  ["XC-12",    "NOR", "SWE", "FIN"],     // Women's 4x7.5km Relay: Norway, Sweden, Finland
+
+  // Day 9 — Feb 15
+  ["ALP-8",    "ITA", "SWE", "NOR"],     // Women's Giant Slalom: Brignone, Hector, Stjernesund (shared silver)
+  ["BIA-3",    "SWE", "NOR", "FRA"],     // Men's 12.5km Pursuit: Ponsiluoma, Laegreid, Jacquelin
+  ["BIA-8",    "ITA", "NOR", "FIN"],     // Women's 10km Pursuit: Vittozzi, Kirkeeide, Minkkinen
+  ["FREE-14",  "CAN", "JPN", "AUS"],     // Men's Dual Moguls: Kingsbury, Horishima, Graham
+  ["XC-6",     "NOR", "FRA", "ITA"],     // Men's 4x7.5km Relay: Norway, France, Italy
 ];
 
 export interface FetchedResult {
@@ -190,12 +234,14 @@ const EVENT_ID_MAP: Record<string, string> = {
   "freestyle skiing|men|slopestyle": "FREE-4", "freestyle|men|slopestyle": "FREE-4",
   "freestyle skiing|men|big air": "FREE-5", "freestyle|men|big air": "FREE-5",
   "freestyle skiing|men|ski cross": "FREE-6", "freestyle|men|ski cross": "FREE-6",
+  "freestyle skiing|men|dual moguls": "FREE-14", "freestyle|men|dual moguls": "FREE-14",
   "freestyle skiing|women|aerials": "FREE-7", "freestyle|women|aerials": "FREE-7",
   "freestyle skiing|women|moguls": "FREE-8", "freestyle|women|moguls": "FREE-8",
   "freestyle skiing|women|halfpipe": "FREE-9", "freestyle|women|halfpipe": "FREE-9",
   "freestyle skiing|women|slopestyle": "FREE-10", "freestyle|women|slopestyle": "FREE-10",
   "freestyle skiing|women|big air": "FREE-11", "freestyle|women|big air": "FREE-11",
   "freestyle skiing|women|ski cross": "FREE-12", "freestyle|women|ski cross": "FREE-12",
+  "freestyle skiing|women|dual moguls": "FREE-15", "freestyle|women|dual moguls": "FREE-15",
   "freestyle skiing|mixed|team aerials": "FREE-13", "freestyle|mixed|team aerials": "FREE-13",
   "ice hockey|men|tournament": "ICE-1", "ice hockey|women|tournament": "ICE-2",
   "luge|men|singles": "LUG-1", "luge|women|singles": "LUG-2",
