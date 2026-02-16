@@ -224,7 +224,7 @@ const AppShell: React.FC = () => {
     }
   }, [session?.leagueId, authUser]);
 
-  // --- Auto-Fetch Live Results (on load + every 2 hours) ---
+  // --- Auto-Fetch Live Results (on load + every 30 min) ---
   useEffect(() => {
     if (!session?.leagueId || !authUser) return;
 
@@ -232,9 +232,11 @@ const AppShell: React.FC = () => {
 
     const autoFetchResults = async () => {
       try {
-        console.log('[AutoSync] Fetching live results...');
+        console.log('[AutoSync] Fetching live results from confirmed + Wikipedia...');
         const { fetchLiveResults, filterNewResults } = await import('./liveResultsService');
-        const { results: fetched } = await fetchLiveResults();
+        const { results: fetched, source, wikiCount, confirmedCount } = await fetchLiveResults();
+
+        console.log(`[AutoSync] Total: ${fetched.length} results (${confirmedCount} confirmed, ${wikiCount} from wiki). Source: ${source}`);
 
         if (isCancelled || fetched.length === 0) return;
 
@@ -244,11 +246,11 @@ const AppShell: React.FC = () => {
         const newResults = filterNewResults(fetched, existingResults);
 
         if (newResults.length === 0) {
-          console.log('[AutoSync] No new results to import');
+          console.log(`[AutoSync] No new results to import (${existingResults.length} already in Firebase)`);
           return;
         }
 
-        console.log(`[AutoSync] Importing ${newResults.length} new results`);
+        console.log(`[AutoSync] Importing ${newResults.length} new results:`, newResults.map(r => r.eventId));
 
         for (const r of newResults) {
           if (isCancelled) break;
@@ -262,6 +264,7 @@ const AppShell: React.FC = () => {
               timestamp: Date.now(),
             });
             markEventFinished(session.leagueId, r.eventId).catch(() => {});
+            console.log(`[AutoSync] Imported ${r.eventId}: ${r.gold}/${r.silver}/${r.bronze}`);
           } catch (err) {
             console.warn('[AutoSync] Failed to import', r.eventId, err);
           }
@@ -278,8 +281,8 @@ const AppShell: React.FC = () => {
       if (!isCancelled) autoFetchResults();
     }, 3000);
 
-    // Then every 2 hours
-    const interval = setInterval(autoFetchResults, 2 * 60 * 60 * 1000);
+    // Re-fetch every 30 minutes to catch new Wikipedia updates
+    const interval = setInterval(autoFetchResults, 30 * 60 * 1000);
 
     return () => {
       isCancelled = true;
