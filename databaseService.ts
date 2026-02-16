@@ -550,6 +550,24 @@ export const addResultToLeague = async (leagueId: string, result: MedalResult) =
     });
 };
 
+/**
+ * Get all league IDs in the database.
+ * Used by auto-sync to push results to every league, not just the current one.
+ */
+export const getAllLeagueIds = async (): Promise<string[]> => {
+    const snap = await db.collection("leagues").get();
+    return snap.docs.map(doc => doc.id);
+};
+
+/**
+ * Get existing results for a league (lightweight — just the results array).
+ */
+export const getLeagueResults = async (leagueId: string): Promise<MedalResult[]> => {
+    const doc = await db.collection("leagues").doc(leagueId).get();
+    if (!doc.exists) return [];
+    return (doc.data()?.results || []) as MedalResult[];
+};
+
 export const editResultWithAudit = async (
   leagueId: string, 
   updatedResult: MedalResult, 

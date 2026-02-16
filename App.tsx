@@ -18,7 +18,7 @@ import HowItWorks from './HowItWorks';
 import Navigation from './Navigation';
 import MiniBuySlot from './MiniBuySlot';
 import { calculateUserScore } from './scoringEngine';
-import { updateWaveInCloud, updateTeamInCloud, joinLeagueInCloud, fetchLeagueData, deleteLeagueInCloud, signOut, listenToLeague, listenToTeams, addResultToLeague, listenToChat, sendChatMessage, createLeagueInCloud, updateLeagueSettingsInCloud, moveUserToWave, initializeDraftState, quickFixLeagueDraft, createBotInWave, clearLeagueResults } from './databaseService';
+import { updateWaveInCloud, updateTeamInCloud, joinLeagueInCloud, fetchLeagueData, deleteLeagueInCloud, signOut, listenToLeague, listenToTeams, addResultToLeague, listenToChat, sendChatMessage, createLeagueInCloud, updateLeagueSettingsInCloud, moveUserToWave, initializeDraftState, quickFixLeagueDraft, createBotInWave, clearLeagueResults, getAllLeagueIds, getLeagueResults } from './databaseService';
 import { listenToEvents, mergeWithStaticData, syncEventsToFirebase, markEventFinished } from './services/olympicDataService';
 import { auth, db } from './firebase';
 import ToastProvider, { useToast } from './Toast';
@@ -225,8 +225,9 @@ const AppShell: React.FC = () => {
   }, [session?.leagueId, authUser]);
 
   // --- Auto-Fetch Live Results (on load + every 30 min) ---
+  // Syncs results to ALL leagues in the database, not just the current one.
   useEffect(() => {
-    if (!session?.leagueId || !authUser) return;
+    if (!authUser) return;
 
     let isCancelled = false;
 
@@ -240,37 +241,47 @@ const AppShell: React.FC = () => {
 
         if (isCancelled || fetched.length === 0) return;
 
-        // Get latest results from Firebase to diff
-        const leagueData = await fetchLeagueData(session.leagueId);
-        const existingResults: MedalResult[] = leagueData?.results || [];
-        const newResults = filterNewResults(fetched, existingResults);
+        // Get ALL league IDs and sync results to each
+        const allLeagueIds = await getAllLeagueIds();
+        console.log(`[AutoSync] Syncing to ${allLeagueIds.length} leagues...`);
 
-        if (newResults.length === 0) {
-          console.log(`[AutoSync] No new results to import (${existingResults.length} already in Firebase)`);
-          return;
-        }
-
-        console.log(`[AutoSync] Importing ${newResults.length} new results:`, newResults.map(r => r.eventId));
-
-        for (const r of newResults) {
+        let totalImported = 0;
+        for (const leagueId of allLeagueIds) {
           if (isCancelled) break;
           try {
-            await addResultToLeague(session.leagueId, {
-              eventId: r.eventId,
-              gold: r.gold,
-              silver: r.silver,
-              bronze: r.bronze,
-              source: 'live',
-              timestamp: Date.now(),
-            });
-            markEventFinished(session.leagueId, r.eventId).catch(() => {});
-            console.log(`[AutoSync] Imported ${r.eventId}: ${r.gold}/${r.silver}/${r.bronze}`);
+            const existingResults = await getLeagueResults(leagueId);
+            const newResults = filterNewResults(fetched, existingResults);
+
+            if (newResults.length === 0) continue;
+
+            console.log(`[AutoSync] League ${leagueId}: importing ${newResults.length} new results`);
+            for (const r of newResults) {
+              if (isCancelled) break;
+              try {
+                await addResultToLeague(leagueId, {
+                  eventId: r.eventId,
+                  gold: r.gold,
+                  silver: r.silver,
+                  bronze: r.bronze,
+                  source: 'live',
+                  timestamp: Date.now(),
+                });
+                markEventFinished(leagueId, r.eventId).catch(() => {});
+                totalImported++;
+              } catch (err) {
+                console.warn(`[AutoSync] Failed to import ${r.eventId} to league ${leagueId}`, err);
+              }
+            }
           } catch (err) {
-            console.warn('[AutoSync] Failed to import', r.eventId, err);
+            console.warn(`[AutoSync] Failed to sync league ${leagueId}:`, err);
           }
         }
 
-        console.log(`[AutoSync] Done — imported ${newResults.length} results`);
+        if (totalImported > 0) {
+          console.log(`[AutoSync] Done — imported ${totalImported} total results across ${allLeagueIds.length} leagues`);
+        } else {
+          console.log(`[AutoSync] All ${allLeagueIds.length} leagues are up to date`);
+        }
       } catch (err) {
         console.warn('[AutoSync] Fetch failed:', err);
       }
@@ -289,7 +300,7 @@ const AppShell: React.FC = () => {
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, [session?.leagueId, authUser]);
+  }, [authUser]);
 
   // MIGRATION: Backfill detailed draft info if missing
   useEffect(() => {

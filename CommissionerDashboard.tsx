@@ -1365,7 +1365,7 @@ const CommissionerDashboard: React.FC<CommissionerDashboardProps> = ({
               <div>
                 <div className="text-[10px] font-black text-electric-600 uppercase tracking-widest">Live Results Sync</div>
                 <div className="text-[9px] text-gray-500 mt-0.5">
-                  {lastSyncTime ? `Last synced: ${Math.round((Date.now() - lastSyncTime) / 60000)}m ago` : 'Auto-syncs every 2 hours. Click to sync now.'}
+                  {lastSyncTime ? `Last synced: ${Math.round((Date.now() - lastSyncTime) / 60000)}m ago` : 'Auto-syncs every 30 min for all leagues. Click to sync now.'}
                 </div>
               </div>
             </div>
