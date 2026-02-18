@@ -91,11 +91,36 @@ const CONFIRMED_RESULTS: [string, string, string, string][] = [
   ["XC-12",    "NOR", "SWE", "FIN"],     // Women's 4x7.5km Relay: Norway, Sweden, Finland
 
   // Day 9 — Feb 15
-  ["ALP-8",    "ITA", "SWE", "NOR"],     // Women's Giant Slalom: Brignone, Hector, Stjernesund (shared silver)
+  ["ALP-8",    "ITA", "NOR", "SWE"],     // Women's Giant Slalom: Brignone, Stjernesund, Hector (wiki: shared silver SWE+NOR)
   ["BIA-3",    "SWE", "NOR", "FRA"],     // Men's 12.5km Pursuit: Ponsiluoma, Laegreid, Jacquelin
   ["BIA-8",    "ITA", "NOR", "FIN"],     // Women's 10km Pursuit: Vittozzi, Kirkeeide, Minkkinen
   ["FREE-14",  "CAN", "JPN", "AUS"],     // Men's Dual Moguls: Kingsbury, Horishima, Graham
   ["XC-6",     "NOR", "FRA", "ITA"],     // Men's 4x7.5km Relay: Norway, France, Italy
+
+  // Day 10 — Feb 16
+  ["ALP-4",    "SUI", "AUT", "NOR"],     // Men's Slalom: Meillard, Gstrein, Kristoffersen
+  ["BOB-1",    "GER", "GER", "GER"],     // Men's Two-man Bobsleigh: Lochner, Friedrich, Ammour
+  ["FREE-5",   "NOR", "USA", "AUT"],     // Men's Freeski Big Air: Frostad, Forehand, Švancer
+  ["FREE-11",  "CAN", "CHN", "ITA"],     // Women's Freeski Big Air: Oldham, Gu, Tabanelli
+  ["NOR-2",    "NOR", "AUT", "FIN"],     // Nordic Combined LH: Oftebro, Lamparter, Herola
+  ["SNOW-5",   "AUT", "CAN", "AUT"],     // Men's Snowboard Cross: Hämmerle, Grondin, Dusek
+  ["BIA-5",    "FRA", "NOR", "SWE"],     // Men's Biathlon 4x7.5km Relay
+  ["SKI-4B",   "NOR", "NOR", "SLO"],     // Women's LH Ski Jumping: Strøm, Kvandal, Prevc
+
+  // Day 11 — Feb 17
+  ["BOB-4",    "USA", "GER", "USA"],     // Women's Monobob: Meyers Taylor, Nolte, Humphries
+  ["FIG-3",    "JPN", "GEO", "GER"],     // Figure Skating Pairs: Miura/Kihara, Metelkina/Berulava, Hase/Volodin
+  ["SHORT-6",  "NED", "CAN", "KOR"],     // Short Track Women's 1000m: Velzeboer, Sarault, Kim
+  ["SKEL-3",   "GBR", "GER", "GER"],     // Skeleton Mixed Team: GB, Germany, Germany
+  ["SKI-3",    "AUT", "POL", "NOR"],     // Ski Jumping Men's LH Super Team
+  ["SNOW-11",  "GBR", "ITA", "FRA"],     // Mixed Team Snowboard Cross
+  ["SPEED-6",  "ITA", "USA", "CHN"],     // Men's Speed Skating Team Pursuit
+  ["SPEED-8",  "NED", "NED", "JPN"],     // Women's Speed Skating 500m: Kok, Leerdam, Takagi
+  ["SPEED-13", "CAN", "NED", "JPN"],     // Women's Speed Skating Team Pursuit
+
+  // Corrections from Wikipedia updates
+  ["SHORT-2",  "NED", "CHN", "KOR"],     // Short Track Men's 1000m: van 't Wout, Sun Long, Rim (was NED)
+  ["LUG-4",    "GER", "AUT", "ITA"],     // Luge Team Relay: Germany, Austria, Italy (was GER/GER/AUT)
 ];
 
 export interface FetchedResult {
@@ -195,12 +220,12 @@ const EVENT_ID_MAP: Record<string, string> = {
   "alpine skiing|men|super-g": "ALP-2", "alpine skiing|men|super g": "ALP-2",
   "alpine skiing|men|giant slalom": "ALP-3",
   "alpine skiing|men|slalom": "ALP-4",
-  "alpine skiing|men|combined": "ALP-5",
+  "alpine skiing|men|combined": "ALP-5", "alpine skiing|men|team combined": "ALP-5",
   "alpine skiing|women|downhill": "ALP-6",
   "alpine skiing|women|super-g": "ALP-7", "alpine skiing|women|super g": "ALP-7",
   "alpine skiing|women|giant slalom": "ALP-8",
   "alpine skiing|women|slalom": "ALP-9",
-  "alpine skiing|women|combined": "ALP-10",
+  "alpine skiing|women|combined": "ALP-10", "alpine skiing|women|team combined": "ALP-10",
   // Biathlon
   "biathlon|men|sprint": "BIA-1", "biathlon|men|10km sprint": "BIA-1", "biathlon|men|10 kilometre sprint": "BIA-1",
   "biathlon|men|individual": "BIA-2", "biathlon|men|20km individual": "BIA-2", "biathlon|men|20 kilometre individual": "BIA-2",
@@ -213,11 +238,15 @@ const EVENT_ID_MAP: Record<string, string> = {
   "biathlon|women|mass start": "BIA-9", "biathlon|women|12.5km mass start": "BIA-9", "biathlon|women|12.5 kilometre mass start": "BIA-9",
   "biathlon|women|relay": "BIA-10", "biathlon|women|4x6km relay": "BIA-10", "biathlon|women|4 x 6 kilometre relay": "BIA-10",
   "biathlon|mixed|mixed relay": "BIA-11", "biathlon|mixed|relay": "BIA-11",
-  // Bobsleigh
+  // Bobsleigh (wiki has no gender sections — gender inferred from event names)
   "bobsleigh|men|two-man": "BOB-1", "bobsleigh|men|two man": "BOB-1", "bobsled|men|two-man": "BOB-1", "bobsled|men|two man": "BOB-1",
+  "bobsleigh|mixed|two-man": "BOB-1", "bobsleigh|mixed|two man": "BOB-1",
   "bobsleigh|men|four-man": "BOB-2", "bobsleigh|men|four man": "BOB-2", "bobsled|men|four-man": "BOB-2", "bobsled|men|four man": "BOB-2",
+  "bobsleigh|mixed|four-man": "BOB-2", "bobsleigh|mixed|four man": "BOB-2",
   "bobsleigh|women|two-woman": "BOB-3", "bobsleigh|women|two woman": "BOB-3", "bobsled|women|two-woman": "BOB-3", "bobsled|women|two woman": "BOB-3",
+  "bobsleigh|mixed|two-woman": "BOB-3", "bobsleigh|mixed|two woman": "BOB-3",
   "bobsleigh|women|monobob": "BOB-4", "bobsled|women|monobob": "BOB-4",
+  "bobsleigh|mixed|women's monobob": "BOB-4", "bobsleigh|women|women's monobob": "BOB-4",
   // Curling
   "curling|men|tournament": "CUR-1", "curling|women|tournament": "CUR-2",
   "curling|mixed|mixed doubles": "CUR-3", "curling|mixed|doubles": "CUR-3",
@@ -226,17 +255,23 @@ const EVENT_ID_MAP: Record<string, string> = {
   "cross-country skiing|men|10km": "XC-2", "cross-country skiing|men|10 kilometre freestyle": "XC-2", "cross-country skiing|men|10 kilometre": "XC-2",
   "cross-country skiing|men|skiathlon": "XC-3", "cross-country skiing|men|20 kilometre skiathlon": "XC-3",
   "cross-country skiing|men|50km": "XC-4", "cross-country skiing|men|50km mass start": "XC-4", "cross-country skiing|men|50 kilometre mass start freestyle": "XC-4", "cross-country skiing|men|50 kilometre": "XC-4",
+  "cross-country skiing|men|50 kilometre classical": "XC-4",
   "cross-country skiing|men|team sprint": "XC-5", "cross-country skiing|men|team sprint freestyle": "XC-5",
   "cross-country skiing|men|relay": "XC-6", "cross-country skiing|men|4x7.5km relay": "XC-6", "cross-country skiing|men|4 x 10 kilometre relay": "XC-6",
+  "cross-country skiing|men|4 x 7.5 kilometre relay": "XC-6",
   "cross-country skiing|women|sprint": "XC-7", "cross-country skiing|women|sprint classic": "XC-7", "cross-country skiing|women|sprint classical": "XC-7",
   "cross-country skiing|women|10km": "XC-8", "cross-country skiing|women|10 kilometre freestyle": "XC-8", "cross-country skiing|women|10 kilometre": "XC-8",
   "cross-country skiing|women|skiathlon": "XC-9", "cross-country skiing|women|20 kilometre skiathlon": "XC-9",
   "cross-country skiing|women|50km": "XC-10", "cross-country skiing|women|50km mass start": "XC-10", "cross-country skiing|women|50 kilometre mass start freestyle": "XC-10", "cross-country skiing|women|50 kilometre": "XC-10",
+  "cross-country skiing|women|50 kilometre classical": "XC-10",
   "cross-country skiing|women|team sprint": "XC-11", "cross-country skiing|women|team sprint freestyle": "XC-11",
   "cross-country skiing|women|relay": "XC-12", "cross-country skiing|women|4x7.5km relay": "XC-12", "cross-country skiing|women|4 x 5 kilometre relay": "XC-12",
-  // Figure Skating
+  "cross-country skiing|women|4 x 7.5 kilometre relay": "XC-12",
+  // Figure Skating (wiki has no gender sections — gender inferred from event names)
   "figure skating|men|singles": "FIG-1", "figure skating|men|individual": "FIG-1",
+  "figure skating|men|men's singles": "FIG-1",
   "figure skating|women|singles": "FIG-2", "figure skating|women|individual": "FIG-2",
+  "figure skating|women|women's singles": "FIG-2",
   "figure skating|mixed|pairs": "FIG-3", "figure skating|mixed|pair skating": "FIG-3",
   "figure skating|mixed|ice dance": "FIG-4", "figure skating|mixed|dance": "FIG-4",
   "figure skating|mixed|team event": "FIG-5", "figure skating|mixed|team": "FIG-5",
@@ -258,14 +293,18 @@ const EVENT_ID_MAP: Record<string, string> = {
   "freestyle skiing|mixed|team aerials": "FREE-13", "freestyle|mixed|team aerials": "FREE-13",
   // Ice Hockey
   "ice hockey|men|tournament": "ICE-1", "ice hockey|women|tournament": "ICE-2",
-  // Luge
-  "luge|men|singles": "LUG-1", "luge|women|singles": "LUG-2",
-  "luge|men|doubles": "LUG-3", "luge|women|doubles": "LUG-3B",
+  // Luge (wiki has no gender sections — gender inferred from event names)
+  "luge|men|singles": "LUG-1", "luge|men|men's singles": "LUG-1",
+  "luge|women|singles": "LUG-2", "luge|women|women's singles": "LUG-2",
+  "luge|men|doubles": "LUG-3", "luge|men|men's doubles": "LUG-3",
+  "luge|women|doubles": "LUG-3B", "luge|women|women's doubles": "LUG-3B",
   "luge|mixed|team relay": "LUG-4", "luge|mixed|relay": "LUG-4",
-  // Nordic Combined
+  // Nordic Combined (wiki uses "Individual normal hill/10 km" etc.)
   "nordic combined|men|normal hill": "NOR-1", "nordic combined|men|individual normal hill": "NOR-1",
+  "nordic combined|men|individual normal hill/10 km": "NOR-1",
   "nordic combined|men|large hill": "NOR-2", "nordic combined|men|individual large hill": "NOR-2",
-  "nordic combined|men|team sprint": "NOR-3",
+  "nordic combined|men|individual large hill/10 km": "NOR-2",
+  "nordic combined|men|team sprint": "NOR-3", "nordic combined|men|team large hill/2 x 7.5 km": "NOR-3",
   // Short Track
   "short track|men|500m": "SHORT-1", "short track speed skating|men|500m": "SHORT-1", "short track speed skating|men|500 metres": "SHORT-1",
   "short track|men|1000m": "SHORT-2", "short track speed skating|men|1000m": "SHORT-2", "short track speed skating|men|1000 metres": "SHORT-2",
@@ -276,14 +315,18 @@ const EVENT_ID_MAP: Record<string, string> = {
   "short track|women|1500m": "SHORT-7", "short track speed skating|women|1500m": "SHORT-7", "short track speed skating|women|1500 metres": "SHORT-7",
   "short track|women|3000m relay": "SHORT-8", "short track|women|relay": "SHORT-8", "short track speed skating|women|3000 metre relay": "SHORT-8",
   "short track|mixed|mixed team relay": "SHORT-9", "short track|mixed|relay": "SHORT-9", "short track speed skating|mixed|mixed team relay": "SHORT-9",
-  // Skeleton
+  "short track speed skating|mixed|2000 metre relay": "SHORT-9", "short-track speed skating|mixed|2000 metre relay": "SHORT-9",
+  // Skeleton (wiki has no gender sections — event names are "Men's", "Women's", "Mixed team")
   "skeleton|men|singles": "SKEL-1", "skeleton|men|individual": "SKEL-1",
+  "skeleton|men|men's": "SKEL-1",
   "skeleton|women|singles": "SKEL-2", "skeleton|women|individual": "SKEL-2",
+  "skeleton|women|women's": "SKEL-2",
   "skeleton|mixed|mixed team": "SKEL-3",
   // Ski Jumping
   "ski jumping|men|normal hill": "SKI-1", "ski jumping|men|individual normal hill": "SKI-1",
   "ski jumping|men|large hill": "SKI-2", "ski jumping|men|individual large hill": "SKI-2",
   "ski jumping|men|team": "SKI-3", "ski jumping|men|super team": "SKI-3", "ski jumping|men|team large hill": "SKI-3",
+  "ski jumping|men|large hill super team": "SKI-3", "ski jumping|men|men's large hill super team": "SKI-3",
   "ski jumping|women|normal hill": "SKI-4", "ski jumping|women|individual normal hill": "SKI-4",
   "ski jumping|women|large hill": "SKI-4B", "ski jumping|women|individual large hill": "SKI-4B",
   "ski jumping|mixed|mixed team": "SKI-5", "ski jumping|mixed|team": "SKI-5", "ski jumping|mixed|mixed team normal hill": "SKI-5",
@@ -369,6 +412,7 @@ function matchEvent(sport: string, eventName: string, gender?: string): string |
   const normGender = gender || extractGender(eventName);
   const normName = eventName.toLowerCase()
     .replace(/^(men'?s?|women'?s?|mixed)\s+/i, "")
+    .replace(/×/g, "x")                                      // Unicode × → x
     .replace(/\s*[–—-]\s*/g, " ").replace(/\s+/g, " ").trim();
 
   // Direct exact lookup
@@ -412,106 +456,125 @@ function matchEvent(sport: string, eventName: string, gender?: string): string |
   return null;
 }
 
-// ── Wikipedia wikitext parser (rewritten for actual format) ─────────
+// ── Wikipedia wikitext parser ────────────────────────────────────────
 //
-// Wikipedia's "List of 2026 Winter Olympics medal winners" uses:
-//   ==Sport Name==          (level 2 headers)
-//   ===Men's events===      (level 3 headers for gender)
-//   {|{{MedalistTable|...}} (table start)
-//   |-valign="top"          (row separator)
-//   | Event Name<br />{{DetailsLink|...}}   (event cell)
-//   | {{flagIOCmedalist|[[Name]]|IOC|2026 Winter}}  (individual medal)
-//   | {{flagIOC|IOC|2026 Winter}}<br>names...       (team medal)
+// The actual Wikipedia format for "List of 2026 Winter Olympics medal winners":
+//   ==Sport Name==                            (level 2 header)
+//   ===Men's events===  or  ====Mixed====     (level 3/4 for gender — sometimes absent)
+//   {|{{MedalistTable|...}}                   (table start)
+//   |- or |-valign="top" or |- valign="top"   (row separator — varies!)
+//   | Event Name<br />{{DetailsLink|...}}     (event cell — may use {{Nowrap|...}})
+//   | {{flagIOCmedalist|[[Name]]|IOC|...}}    (individual medal winner)
+//   | {{flagIOC|IOC|...}}<br>names...         (team medal — IOC is 1st param)
+//   || sometimes double-pipe separators       (short track uses this)
 
 function parseWikitext(wikitext: string): FetchedResult[] {
   const results: FetchedResult[] = [];
   const seenEventIds = new Set<string>();
 
-  // Split into sport sections by == headers
-  const sportSections = wikitext.split(/(?=^==(?!=))/m);
+  // Split into sport sections by ==Header== (level 2 only)
+  const sportSections = wikitext.split(/\n(?===(?!=))/);
 
   for (const sportSection of sportSections) {
-    // Extract sport name from ==Sport Name==
     const sportHeaderMatch = sportSection.match(/^==\s*([^=]+?)\s*==/m);
     if (!sportHeaderMatch) continue;
     const sportName = sportHeaderMatch[1].trim();
     const normSport = normalizeSport(sportName);
 
-    // Split into gender sub-sections by === headers
-    // If no === headers, treat whole section as one block
+    // Split into gender sub-sections by === or ==== headers
+    // Use a regex that matches 3+ equals: ===, ====
+    const hasGenderHeaders = /\n===+[^=]/.test(sportSection);
     const genderBlocks: { gender: string; content: string }[] = [];
-    const genderSplits = sportSection.split(/(?====(?!=))/);
 
-    for (const gBlock of genderSplits) {
-      const genderMatch = gBlock.match(/^===\s*([^=]+?)\s*===/m);
-      let gender = 'mixed';
-      if (genderMatch) {
-        const gText = genderMatch[1].toLowerCase();
-        if (gText.includes('women') || gText.includes("women's")) gender = 'women';
-        else if (gText.includes('men') || gText.includes("men's")) gender = 'men';
-        else if (gText.includes('mixed')) gender = 'mixed';
+    if (hasGenderHeaders) {
+      const genderSplits = sportSection.split(/\n(?====+[^=])/);
+      for (const gBlock of genderSplits) {
+        const genderMatch = gBlock.match(/^===+\s*([^=]+?)\s*===+/m);
+        let gender = 'mixed';
+        if (genderMatch) {
+          const gText = genderMatch[1].toLowerCase();
+          if (gText.includes('women')) gender = 'women';
+          else if (gText.includes('men')) gender = 'men';
+          else if (gText.includes('mixed')) gender = 'mixed';
+        }
+        genderBlocks.push({ gender, content: gBlock });
       }
-      genderBlocks.push({ gender, content: gBlock });
+    } else {
+      // No gender sub-sections (e.g. Luge, Skeleton, Figure Skating)
+      // Gender will be inferred from event names
+      genderBlocks.push({ gender: 'auto', content: sportSection });
     }
 
-    for (const { gender, content } of genderBlocks) {
-      // Split into table rows by |- separator
-      const rows = content.split(/\|-(?:valign[^|]*)?/);
+    for (const { gender: sectionGender, content } of genderBlocks) {
+      // Split into table rows by \n|- (catches |-  |-valign  |- valign)
+      const rows = content.split(/\n\|-[^\n]*/);
 
       for (const row of rows) {
-        // Split row into cells (| at start of lines)
-        const cells = row.split(/\n\|(?!\|)/).map(c => c.trim()).filter(c => c.length > 0);
+        // Split row into cells. Handle both:
+        //   \n| cell  (standard)
+        //   ||cell    (compact, used in some short-track rows)
+        // First normalize || into \n| for uniform splitting
+        const normalizedRow = row.replace(/\|\|/g, '\n|');
+        const cells = normalizedRow.split(/\n\|/).map(c => c.trim()).filter(c => c.length > 0);
         if (cells.length < 4) continue;
 
-        // First cell should be the event name
         const eventCell = cells[0];
-
-        // Extract event name: look for text before <br or {{DetailsLink
-        let eventName = '';
-        // Try: plain text before <br>
-        const brMatch = eventCell.match(/^([^<{|]+?)(?:\s*<br|$)/);
-        if (brMatch) {
-          eventName = brMatch[1].trim();
-        }
-        // Try: {{Nowrap|text}} before <br>
-        if (!eventName) {
-          const nowrapMatch = eventCell.match(/\{\{Nowrap\|([^}]+)\}\}/i);
-          if (nowrapMatch) eventName = nowrapMatch[1].trim();
-        }
-        // Try: anything in the cell that looks like an event name
-        if (!eventName) {
-          const plainMatch = eventCell.replace(/\{\{[^}]*\}\}/g, '').replace(/<[^>]*>/g, '').trim();
-          if (plainMatch.length > 2) eventName = plainMatch;
-        }
-
-        if (!eventName || eventName.length < 3) continue;
-
-        // Clean event name
-        eventName = eventName
-          .replace(/\[\[([^|\]]*\|)?([^\]]+)\]\]/g, '$2') // [[link|text]] → text
-          .replace(/'''?/g, '')                               // bold/italic
-          .replace(/\{\{[^}]*\}\}/g, '')                      // templates
-          .replace(/<[^>]*>/g, '')                             // HTML tags
-          .trim();
-
-        if (!eventName || eventName.length < 3) continue;
-
-        // Extract IOC codes from the 3 medal cells (gold=cells[1], silver=cells[2], bronze=cells[3])
         const goldCell = cells[1] || '';
         const silverCell = cells[2] || '';
         const bronzeCell = cells[3] || '';
 
+        // ── Extract event name ──
+        let eventName = '';
+
+        // Try {{Nowrap|text}} first (cross-country, nordic combined use this)
+        const nowrapMatch = eventCell.match(/\{\{[Nn]owrap\|([^}]+)\}\}/);
+        if (nowrapMatch) {
+          eventName = nowrapMatch[1].trim();
+        }
+
+        // Try plain text before <br or {{ if Nowrap didn't work
+        if (!eventName) {
+          const brMatch = eventCell.match(/^([^<{|]+?)(?:\s*<br|$)/);
+          if (brMatch && brMatch[1].trim().length > 2) {
+            eventName = brMatch[1].trim();
+          }
+        }
+
+        // Fallback: strip all templates and HTML, use what's left
+        if (!eventName) {
+          const plain = eventCell.replace(/\{\{[^}]*\}\}/g, '').replace(/<[^>]*>/g, '').trim();
+          if (plain.length > 2) eventName = plain;
+        }
+
+        if (!eventName || eventName.length < 2) continue;
+
+        // Clean wiki markup from event name
+        eventName = eventName
+          .replace(/\[\[([^|\]]*\|)?([^\]]+)\]\]/g, '$2')  // [[link|text]] → text
+          .replace(/'''?/g, '')                                // bold/italic
+          .replace(/\{\{[^}]*\}\}/g, '')                       // templates
+          .replace(/<[^>]*>/g, '')                              // HTML tags
+          .replace(/&nbsp;/g, ' ')                              // non-breaking spaces
+          .trim();
+
+        if (!eventName || eventName.length < 2) continue;
+
+        // ── Extract IOC codes ──
         const goldCode = extractIOCCode(goldCell);
         const silverCode = extractIOCCode(silverCell);
         const bronzeCode = extractIOCCode(bronzeCell);
 
-        // Need all 3 medals to count as a complete result
+        // Need all 3 medals for a complete result
         if (!goldCode || !silverCode || !bronzeCode) continue;
 
-        // Determine gender from event name or section header
-        const eventGender = extractGenderFromEventContext(eventName, gender);
+        // ── Determine gender ──
+        let eventGender = sectionGender;
+        if (sectionGender === 'auto' || sectionGender === 'mixed') {
+          // Infer from event name (for sports without gender sub-sections)
+          eventGender = inferGenderFromEventName(eventName, sectionGender === 'auto' ? 'mixed' : sectionGender);
+        }
 
-        // Match to our event ID
+        // ── Match to our event ID ──
         const eventId = matchEvent(normSport, eventName, eventGender);
 
         if (eventId && !seenEventIds.has(eventId)) {
@@ -535,35 +598,47 @@ function parseWikitext(wikitext: string): FetchedResult[] {
 
 /**
  * Extract an IOC country code from a medal cell.
- * Handles both patterns:
- *   {{flagIOCmedalist|[[Name]]|IOC|2026 Winter}}  → IOC is 2nd param after name
- *   {{flagIOC|IOC|2026 Winter}}                   → IOC is 1st param
+ * Case-INSENSITIVE to handle {{FlagIOC|...}} vs {{flagIOC|...}}.
+ *
+ * Actual patterns in the wikitext:
+ *   {{flagIOCmedalist|[[Name (disambiguation)|Name]]|IOC|2026 Winter}}
+ *   {{flagIOCmedalist|[[Name]]|IOC|2026 Winter}}
+ *   {{flagIOC|IOC|2026 Winter}}
+ *   {{FlagIOC|IOC|2026 Winter}}
+ *
+ * The tricky part: names can contain | inside [[...]] brackets.
+ * Strategy: strip all [[...]] first, then extract the 3-letter code.
  */
 function extractIOCCode(cell: string): string | null {
-  // Pattern 1: {{flagIOCmedalist|[[Name]]|IOC|...}} or {{flagIOCmedalist|Name|IOC|...}}
-  const medalistMatch = cell.match(/flagIOCmedalist\s*\|[^|]*\|([A-Z]{3})\|/);
-  if (medalistMatch) return medalistMatch[1];
+  // Strip [[wiki links]] to avoid | confusion inside them
+  const cleaned = cell.replace(/\[\[[^\]]*\]\]/g, 'NAME');
 
-  // Pattern 2: {{flagIOC|IOC|...}}
-  const flagMatch = cell.match(/flagIOC\s*\|([A-Z]{3})\|/);
-  if (flagMatch) return flagMatch[1];
+  // Pattern 1: {{flagIOCmedalist|NAME|IOC|...}}
+  const medalistMatch = cleaned.match(/flagIOCmedalist\s*\|[^|]*\|([A-Z]{3})\|/i);
+  if (medalistMatch) return medalistMatch[1].toUpperCase();
 
-  // Fallback: any 3-letter uppercase code near flagIOC
-  const fallback = cell.match(/flagIOC(?:medalist)?\s*\|[^}]*?([A-Z]{3})/);
-  if (fallback) return fallback[1];
+  // Pattern 2: {{flagIOC|IOC|...}} or {{FlagIOC|IOC|...}}
+  const flagMatch = cleaned.match(/flagIOC\s*\|([A-Z]{3})\|/i);
+  if (flagMatch) return flagMatch[1].toUpperCase();
+
+  // Fallback: look for a 3-letter ALL-CAPS code after flagIOC
+  // Must be exactly 3 uppercase letters bounded by | or }
+  const fallback = cleaned.match(/flagIOC(?:medalist)?\s*\|(?:[^|]*\|)?([A-Z]{3})(?:\||$)/i);
+  if (fallback) return fallback[1].toUpperCase();
 
   return null;
 }
 
 /**
- * Determine gender from event name + section context.
+ * Infer gender from event name (for sports without ===gender=== sections).
+ * E.g. "Men's singles", "Women's monobob", "Mixed team", "Team relay"
  */
-function extractGenderFromEventContext(eventName: string, sectionGender: string): string {
+function inferGenderFromEventName(eventName: string, fallback: string): string {
   const lower = eventName.toLowerCase();
-  // Check event name first
-  if (lower.includes('mixed') || lower.includes('team relay') || lower.includes('pair') || lower.includes('ice dance') || lower.includes('team event')) return 'mixed';
-  if (lower.includes("women") || lower.includes("ladies")) return 'women';
+  if (lower.includes('mixed') || lower.includes('team relay') || lower.includes('team event') || lower.includes('mixed team')) return 'mixed';
+  if (lower.includes('pair') || lower.includes('ice dance')) return 'mixed';
+  if (lower.includes("women")) return 'women';
   if (lower.includes("men")) return 'men';
-  // Fall back to section gender
-  return sectionGender;
+  // "Team combined" etc. without gendered prefix → use section fallback
+  return fallback;
 }
